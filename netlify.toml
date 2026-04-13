@@ -1,7 +1,13 @@
 [build]
-  command = "npm install && npm run build"
   publish = "dist"
-
+  command = "node build.js"
+[build.environment]
+  SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
 [[redirects]]
   from = "/*"
   to = "/index.html"

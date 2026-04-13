@@ -1,18 +1,18 @@
 # Zion Solutions — Portal do Cliente
 
-## Como fazer o deploy no Netlify via GitHub
+## Variáveis de ambiente no Netlify
 
-1. Arraste todos esses arquivos para o seu repositório GitHub
-2. No Netlify, conecte o repositório
-3. Configure:
-   - **Build command:** `npm install && npm run build`
-   - **Publish directory:** `dist`
-4. Clique em Deploy
+| Variável | Valor |
+|---|---|
+| `FIREBASE_API_KEY` | API Key do Firebase |
+| `FIREBASE_AUTH_DOMAIN` | zion-d233f.firebaseapp.com |
+| `FIREBASE_PROJECT_ID` | zion-d233f |
+| `FIREBASE_STORAGE_BUCKET` | zion-d233f.firebasestorage.app |
+| `FIREBASE_MESSAGING_SENDER_ID` | 769044838873 |
+| `FIREBASE_APP_ID` | 1:769044838873:web:... |
 
-## Configurar Firebase
+**Build command:** `node build.js`  
+**Publish directory:** `dist`
 
-No arquivo `ZionPortal.jsx`, substitua o bloco `FIREBASE_CONFIG` com os dados do seu projeto Firebase.
-
-## Criar usuários
-
-Veja o README completo no ZIP original para instruções detalhadas.
+> Nota: Firebase API Keys são projetadas para uso público no frontend.
+> A segurança é garantida pelas Firebase Security Rules, não pela chave.
