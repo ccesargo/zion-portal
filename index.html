@@ -479,7 +479,7 @@ function Dashboard({user,messages,payments,caseStatus,clients,mobile,setActive})
 
   if (isAdmin||isDev) {
     const pPay=payments.filter(p=>p.status==="pending_review").length;
-    const unread=messages.filter(m=>!m.read).length;
+    const unread=messages.filter(m=>m.source==="client"&&!m.read).length;
     const totalArr=payments.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
     const cols=mobile?"1fr 1fr":"1fr 1fr 1fr";
     return (
@@ -529,7 +529,7 @@ function Dashboard({user,messages,payments,caseStatus,clients,mobile,setActive})
   const totalOwed = clientData?.plan?.total || user?.plan?.total || 0;
   const pct=totalOwed>0?Math.min(100,Math.round((totalPago/totalOwed)*100)):0;
   const activeStage=caseStatus.find(s=>s.status!=="pending"&&s.status!=="approved")||caseStatus[0];
-  const unread=messages.filter(m=>m.clientId===user.clientId&&!m.read).length;
+  const unread=messages.filter(m=>m.clientId===user.clientId&&m.source!=="client"&&!m.read).length;
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <Card style={{background:`linear-gradient(135deg,rgba(200,169,110,0.12),rgba(232,200,122,0.05))`,borderColor:"rgba(200,169,110,0.25)"}}>
@@ -591,7 +591,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
   const list=isAdmin?messages:messages.filter(m=>m.clientId===user.clientId);
   const [confirmDel,setConfirmDel]=useState(null);
   const [deleting,setDeleting]=useState(false);
-  const openMsg=msg=>{setSel(msg);if(!msg.read){dbUpdate("messages",msg.id,{read:true});setMessages(p=>p.map(m=>m.id===msg.id?{...m,read:true}:m));}};
+  const openMsg=msg=>{setSel(msg);const shouldMark=(isAdmin&&msg.source==="client")||(!isAdmin&&msg.source!=="client");if(!msg.read&&shouldMark){dbUpdate("messages",msg.id,{read:true});setMessages(p=>p.map(m=>m.id===msg.id?{...m,read:true}:m));}};
   const canDelete=(msg)=>(isAdmin&&(msg.source==="zion"||msg.source==="sponsor"))||(!isAdmin&&msg.source==="client"&&msg.clientId===(user.clientId||user.uid));
   const deleteMsg=async()=>{
     if(!confirmDel)return; setDeleting(true);
@@ -615,7 +615,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
     if(!form.subject||!form.body)return;
     if(isAdmin&&!form.clientId)return;
     const targetClientId = isAdmin ? form.clientId : (user.clientId||user.uid);
-    const data={clientId:targetClientId,from:isAdmin?"Zion Solutions":user.name,subject:form.subject,body:form.body,date:new Date().toISOString().split("T")[0],source:isAdmin?form.source:"client",read:isAdmin?false:true,adminRead:isAdmin?true:false};
+    const data={clientId:targetClientId,from:isAdmin?"Zion Solutions":user.name,subject:form.subject,body:form.body,date:new Date().toISOString().split("T")[0],source:isAdmin?form.source:"client",read:false};
     await addMessage(data);
     setOpen(false); setForm({subject:"",body:"",source:"zion",clientId:""});
   };
@@ -2930,7 +2930,7 @@ function App() {
 
   const isAdmin = user.role==="admin";
   const isDev   = user.role==="developer";
-  const unread  = messages.filter(m=>m.clientId===(user.clientId||"")&&!m.read).length;
+  const unread  = messages.filter(m=>m.clientId===(user.clientId||"")&&m.source!=="client"&&!m.read).length;
 
   const pageTitle = {
     dashboard:(isAdmin||isDev)?"Dashboard":`Olá, ${user.name?.split(" ")[0]} 👋`,
