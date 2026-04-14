@@ -182,6 +182,14 @@ const T = {
   green:"#10B981", amber:"#F59E0B", blue:"#60A5FA", red:"#F87171",
 };
 
+// ── Protocolos de acompanhamento ─────────────────────────────────────────────
+const PROTOCOL_SITES = [
+  { id:"perm",  label:"PERM (DOL)",    placeholder:"Ex: G-200-26086-734717", url:"https://flag.dol.gov/case-status-search" },
+  { id:"i140",  label:"I-140 (USCIS)", placeholder:"Ex: IOE0123456789",      url:"https://egov.uscis.gov/casestatus/landing.do" },
+  { id:"i485",  label:"I-485 (USCIS)", placeholder:"Ex: MSC2190000000",      url:"https://egov.uscis.gov/casestatus/landing.do" },
+  { id:"nvc",   label:"NVC",           placeholder:"Ex: MIA2025000000",      url:"https://ceac.state.gov/IV/" },
+];
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // HOOK: detecta mobile (< 768px)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -556,7 +564,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
     if(!form.subject||!form.body)return;
     if(isAdmin&&!form.clientId)return;
     const targetClientId = isAdmin ? form.clientId : (user.clientId||user.uid);
-    const data={clientId:targetClientId,from:isAdmin?"Zion Solutions":user.name,subject:form.subject,body:form.body,date:new Date().toISOString().split("T")[0],source:form.source,read:false};
+    const data={clientId:targetClientId,from:isAdmin?"Zion Solutions":user.name,subject:form.subject,body:form.body,date:new Date().toISOString().split("T")[0],source:isAdmin?form.source:"client",read:isAdmin?false:true,adminRead:isAdmin?true:false};
     await addMessage(data);
     setOpen(false); setForm({subject:"",body:"",source:"zion",clientId:""});
   };
@@ -566,7 +574,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <button onClick={()=>setSel(null)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:T.dim,fontSize:14,cursor:"pointer",fontFamily:"Georgia,serif",padding:0}}>‹ Voltar</button>
       <h2 style={{color:T.text,fontSize:18,fontWeight:700,margin:0}}>{sel.subject}</h2>
-      <div style={{display:"flex",gap:8}}><Pill color={sel.source==="zion"?T.gold:T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":"Sponsor"}</Pill><span style={{color:T.faint,fontSize:12,alignSelf:"center"}}>{fmt(sel.date)}</span></div>
+      <div style={{display:"flex",gap:8}}><Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill><span style={{color:T.faint,fontSize:12,alignSelf:"center"}}>{fmt(sel.date)}</span></div>
       <Card><p style={{color:"rgba(255,255,255,0.8)",lineHeight:1.75,fontSize:15,margin:0,whiteSpace:"pre-wrap"}}>{sel.body}</p></Card>
     </div>
   );
@@ -575,7 +583,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
     <div style={{display:"flex",gap:20,height:mobile?"auto":"calc(100vh - 140px)"}}>
       {/* Lista */}
       <div style={{width:mobile?"100%":300,display:"flex",flexDirection:"column",gap:10,flexShrink:0}}>
-        {isAdmin&&<Btn onClick={()=>setOpen(true)} style={{width:"100%",textAlign:"center"}}>+ Nova Mensagem</Btn>}
+        <Btn onClick={()=>setOpen(true)} style={{width:"100%",textAlign:"center"}}>+ Nova Mensagem</Btn>
         <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:8}}>
           {list.length===0&&<div style={{color:T.faint,textAlign:"center",paddingTop:30,fontSize:13}}>Nenhuma mensagem</div>}
           {list.map(msg=>(
@@ -583,7 +591,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
               {!msg.read&&<div style={{position:"absolute",top:14,right:14,width:8,height:8,borderRadius:"50%",background:T.gold}}/>}
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <Pill color={msg.source==="zion"?T.gold:T.blue} bg={msg.source==="zion"?"rgba(232,200,122,0.1)":"rgba(96,165,250,0.1)"}>{msg.source==="zion"?"Zion Solutions":"Sponsor"}</Pill>
+                  <Pill color={msg.source==="zion"?T.gold:msg.source==="client"?"#A78BFA":T.blue} bg={msg.source==="zion"?"rgba(232,200,122,0.1)":msg.source==="client"?"rgba(167,139,250,0.1)":"rgba(96,165,250,0.1)"}>{msg.source==="zion"?"Zion Solutions":msg.source==="client"?(isAdmin?msg.from:"Você"):"Sponsor"}</Pill>
                   {isAdmin&&<span style={{color:T.faint,fontSize:11}}>→ {getClientName(msg.clientId)}</span>}
                 </div>
                 <span style={{color:T.faint,fontSize:11}}>{fmt(msg.date)}</span>
@@ -600,13 +608,14 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
           {sel?(<div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,paddingBottom:18,borderBottom:`1px solid ${T.border}`}}>
               <div><h2 style={{color:T.text,margin:"0 0 6px",fontSize:20}}>{sel.subject}</h2><div style={{color:T.faint,fontSize:13}}>De: {sel.from} · {fmt(sel.date)}</div></div>
-              <Pill color={sel.source==="zion"?T.gold:T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":"Sponsor"}</Pill>
+              <Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill>
             </div>
             <p style={{color:"rgba(255,255,255,0.8)",lineHeight:1.75,fontSize:14,margin:0,whiteSpace:"pre-wrap"}}>{sel.body}</p>
           </div>):(<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:T.faint,fontSize:14}}>Selecione uma mensagem</div>)}
         </Card>
       )}
-      <Overlay open={open} onClose={()=>setOpen(false)} title="Nova Mensagem" mobile={mobile}>
+      <Overlay open={open} onClose={()=>setOpen(false)} title={isAdmin?"Nova Mensagem":"Enviar Mensagem para Zion"} mobile={mobile}>
+        {!isAdmin&&<div style={{marginBottom:14,padding:"10px 14px",background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:10}}><span style={{color:"#A78BFA",fontSize:13}}>✉ Para: <strong>Zion Solutions</strong></span></div>}
         {isAdmin&&(
           <>
             <div style={{marginBottom:14}}>
@@ -1110,7 +1119,18 @@ function Cases({user,caseStatus,updateCaseStatus,clients,mobile}) {
           <h3 style={{color:T.gold,margin:"0 0 6px",fontSize:18}}>
             Status do Processo — {clientInfo?.caseType||"EB-3"}
           </h3>
-          {isAdmin&&selectedClient&&<div style={{color:T.faint,fontSize:12,marginBottom:20}}>👤 {selectedClient.name}</div>}
+          {isAdmin&&selectedClient&&<div style={{color:T.faint,fontSize:12,marginBottom:6}}>👤 {selectedClient.name}</div>}
+          {(()=>{const protos=isAdmin?selectedClient?.protocols:clientInfo?.protocols;return protos&&PROTOCOL_SITES.some(s=>protos[s.id])?(
+            <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:18}}>
+              {PROTOCOL_SITES.filter(s=>protos?.[s.id]).map(site=>(
+                <a key={site.id} href={site.url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",background:"rgba(255,255,255,0.05)",border:`1px solid ${T.border}`,borderRadius:10,textDecoration:"none"}}>
+                  <span style={{color:T.faint,fontSize:10,textTransform:"uppercase",letterSpacing:"0.05em"}}>{site.label}</span>
+                  <code style={{color:T.gold,fontSize:12,fontFamily:"monospace"}}>{protos[site.id]}</code>
+                  <span style={{color:T.blue,fontSize:11}}>🔗</span>
+                </a>
+              ))}
+            </div>
+          ):(!isAdmin&&<div style={{color:T.faint,fontSize:12,fontStyle:"italic",marginBottom:18}}>Nenhum protocolo cadastrado ainda.</div>);})()}
           {loadingCase&&<div style={{color:T.faint,textAlign:"center",padding:30}}>Carregando…</div>}
           {!loadingCase&&(
             <div style={{position:"relative"}}>
@@ -1287,6 +1307,7 @@ function Clients({clients,setClients,mobile}) {
         name:form.name, email:form.email, role:"client",
         clientId, caseType:form.caseType, sponsor:form.sponsor,
         priorityDate:form.priorityDate, plan,
+        protocols: { perm:form.proto_perm||"", i140:form.proto_i140||"", i485:form.proto_i485||"", nvc:form.proto_nvc||"" },
       });
 
       // 3. Criar caseStatus padrão
@@ -1385,6 +1406,20 @@ function Clients({clients,setClients,mobile}) {
   const [editClient,setEditClient] = useState(null);
   const [editForm,setEditForm]     = useState({});
   const [savingClient,setSavingClient] = useState(false);
+  const [editProtos,setEditProtos] = useState(null);
+  const [protosForm,setProtosForm] = useState({perm:"",i140:"",i485:"",nvc:""});
+  const [savingProtos,setSavingProtos] = useState(false);
+  const openEditProtos = (c) => { setProtosForm({perm:c.protocols?.perm||"",i140:c.protocols?.i140||"",i485:c.protocols?.i485||"",nvc:c.protocols?.nvc||""}); setEditProtos(c); };
+  const saveProtos = async() => {
+    setSavingProtos(true);
+    try {
+      await dbUpdate("users", editProtos.uid||editProtos.id, { protocols: protosForm });
+      setClients(p=>p.map(c=>(c.uid||c.id)===(editProtos.uid||editProtos.id)?{...c,protocols:protosForm}:c));
+      setMsg({type:"success",text:`✓ Protocolos de ${editProtos.name?.split(" ")[0]} atualizados!`});
+      setEditProtos(null);
+    } catch(e){ setMsg({type:"error",text:"Erro: "+e.message}); }
+    finally{ setSavingProtos(false); }
+  };
 
   const openEditClient = (c) => {
     setEditForm({name:c.name||"",email:c.email||"",sponsor:c.sponsor||"",priorityDate:c.priorityDate||"",caseType:c.caseType||"EB-3"});
@@ -1476,10 +1511,22 @@ function Clients({clients,setClients,mobile}) {
                   </div>
                 : <div style={{padding:"4px 10px",borderRadius:99,background:"rgba(245,158,11,0.1)",color:T.amber,fontSize:12,display:"inline-block",marginTop:4}}>⚠️ Sem plano definido</div>
               }
+              {c.protocols&&PROTOCOL_SITES.some(s=>c.protocols[s.id])&&(
+                <div style={{display:"flex",gap:6,flexWrap:"wrap",marginTop:8}}>
+                  {PROTOCOL_SITES.filter(s=>c.protocols?.[s.id]).map(site=>(
+                    <a key={site.id} href={site.url} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:5,padding:"3px 10px",borderRadius:99,background:"rgba(232,200,122,0.08)",border:"1px solid rgba(232,200,122,0.2)",textDecoration:"none"}}>
+                      <span style={{color:T.faint,fontSize:10,textTransform:"uppercase"}}>{site.label}</span>
+                      <code style={{color:T.gold,fontSize:11,fontFamily:"monospace"}}>{c.protocols[site.id]}</code>
+                      <span style={{color:T.blue,fontSize:10}}>🔗</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             <div style={{display:"flex",flexDirection:"column",gap:6,flexShrink:0,marginLeft:10}}>
               <Btn variant="ghost" onClick={()=>openEditClient(c)} style={{padding:"5px 12px",fontSize:12}}>✏️ Editar</Btn>
               <Btn variant="ghost" onClick={()=>openEditPlan(c)} style={{padding:"5px 12px",fontSize:12}}>💰 {c.plan?"Plano":"Def. plano"}</Btn>
+              <Btn variant="ghost" onClick={()=>openEditProtos(c)} style={{padding:"5px 12px",fontSize:12}}>🔢 Protocolos</Btn>
               <Btn variant="danger" onClick={()=>setDel(c.uid)} style={{padding:"5px 12px",fontSize:12}}>🗑 Excluir</Btn>
             </div>
           </div>
@@ -1499,6 +1546,12 @@ function Clients({clients,setClients,mobile}) {
         <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div><select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}</select></div>
         <FInp label="Sponsor / Employer" value={form.sponsor} onChange={e=>setForm(p=>({...p,sponsor:e.target.value}))} placeholder="Empresa patrocinadora"/>
         <FInp label="Priority Date" type="date" value={form.priorityDate} onChange={e=>setForm(p=>({...p,priorityDate:e.target.value}))}/>
+        <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"4px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🔢 Números de Protocolo <span style={{color:T.faint,fontWeight:400}}>(opcional — pode preencher depois)</span></div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {PROTOCOL_SITES.map(site=>(
+            <FInp key={site.id} label={site.label} value={form[`proto_${site.id}`]||""} onChange={e=>setForm(p=>({...p,[`proto_${site.id}`]:e.target.value}))} placeholder={site.placeholder}/>
+          ))}
+        </div>
         {planFormJSX}
         {msg&&<div style={{padding:"10px 14px",background:msg.type==="success"?"rgba(16,185,129,0.12)":"rgba(239,68,68,0.12)",border:`1px solid ${msg.type==="success"?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`,borderRadius:10,color:msg.type==="success"?T.green:T.red,fontSize:13,marginBottom:14}}>{msg.text}</div>}
         <div style={{display:"flex",gap:10}}><Btn onClick={add} disabled={loading} style={{flex:1}}>{loading?"Cadastrando…":"Cadastrar e Enviar Boas-Vindas"}</Btn><Btn variant="ghost" onClick={()=>setOpen(false)} style={{flex:1}}>Cancelar</Btn></div>
@@ -1513,6 +1566,26 @@ function Clients({clients,setClients,mobile}) {
         </div>}
         {planView?.plan?.obs&&<div style={{padding:"10px 14px",background:T.surface,borderRadius:10,color:T.dim,fontSize:13,marginBottom:12}}>📝 {planView.plan.obs}</div>}
         <div style={{color:T.faint,fontSize:11}}>⚠️ Taxas USCIS cobradas separadamente pelo governo.</div>
+      </Overlay>
+      {/* Editar Protocolos */}
+      <Overlay open={!!editProtos} onClose={()=>setEditProtos(null)} title={`Protocolos — ${editProtos?.name?.split(" ")[0]}`} mobile={mobile}>
+        <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,marginBottom:16,color:T.blue,fontSize:12}}>🔢 Números de protocolo para acompanhamento nos sites oficiais</div>
+        <div style={{display:"flex",flexDirection:"column",gap:12}}>
+          {PROTOCOL_SITES.map(site=>(
+            <div key={site.id}>
+              <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{site.label}</div>
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input value={protosForm[site.id]} onChange={e=>setProtosForm(p=>({...p,[site.id]:e.target.value}))} placeholder={site.placeholder}
+                  style={{flex:1,padding:"10px 12px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:9,color:T.text,fontSize:13,fontFamily:"Georgia,serif"}}/>
+                {protosForm[site.id]&&<a href={site.url} target="_blank" rel="noreferrer" style={{color:T.blue,fontSize:12,textDecoration:"none",flexShrink:0}}>🔗 Verificar</a>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",gap:10,marginTop:20}}>
+          <Btn onClick={saveProtos} disabled={savingProtos} style={{flex:1}}>{savingProtos?"Salvando…":"Salvar Protocolos"}</Btn>
+          <Btn variant="ghost" onClick={()=>setEditProtos(null)} style={{flex:1}}>Cancelar</Btn>
+        </div>
       </Overlay>
       {/* Editar / Definir plano */}
       <Overlay open={!!editPlan} onClose={()=>setEditPlan(null)} title={`${editPlan?.plan?"Editar":"Definir"} Plano — ${editPlan?.name?.split(" ")[0]}`} mobile={mobile}>
@@ -1984,6 +2057,12 @@ function Users({mobile}) {
           </div>
           <FInp label="Sponsor / Employer" value={form.sponsor} onChange={e=>setForm(p=>({...p,sponsor:e.target.value}))} placeholder="Empresa patrocinadora"/>
           <FInp label="Priority Date" type="date" value={form.priorityDate} onChange={e=>setForm(p=>({...p,priorityDate:e.target.value}))}/>
+        <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"4px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🔢 Números de Protocolo <span style={{color:T.faint,fontWeight:400}}>(opcional — pode preencher depois)</span></div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {PROTOCOL_SITES.map(site=>(
+            <FInp key={site.id} label={site.label} value={form[`proto_${site.id}`]||""} onChange={e=>setForm(p=>({...p,[`proto_${site.id}`]:e.target.value}))} placeholder={site.placeholder}/>
+          ))}
+        </div>
           <FInp label="Client ID (deixe vazio para gerar automático)" value={form.clientId} onChange={e=>setForm(p=>({...p,clientId:e.target.value}))} placeholder="Ex: joao_silva"/>
         </>}
         {msg&&msg.type==="error"&&<div style={{padding:"10px 14px",background:"rgba(239,68,68,0.12)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,color:T.red,fontSize:13,marginBottom:14}}>{msg.text}</div>}
