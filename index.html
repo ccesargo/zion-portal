@@ -12,6 +12,7 @@
     input,textarea,select,button{font-family:Georgia,'Times New Roman',serif}
     *{-webkit-tap-highlight-color:transparent}
     html{scroll-behavior:smooth}
+    @keyframes pulse-blue{0%,100%{box-shadow:0 0 0 0 rgba(96,165,250,0.0)}50%{box-shadow:0 0 0 6px rgba(96,165,250,0.15)}}
   </style>
 </head>
 <body>
@@ -485,6 +486,21 @@ function Dashboard({user,messages,payments,caseStatus,clients,mobile,setActive})
       <div style={{display:"flex",flexDirection:"column",gap:16}}>
         {(pPay>0||unread>0)&&(
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            {unread>0&&(
+              <div onClick={()=>setActive("messages")} style={{padding:"14px 16px",background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.35)",borderRadius:14,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",animation:"pulse-blue 2s ease-in-out infinite"}}>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <div style={{position:"relative",flexShrink:0}}>
+                    <span style={{fontSize:22}}>✉</span>
+                    <span style={{position:"absolute",top:-4,right:-6,minWidth:18,height:18,borderRadius:99,background:T.blue,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{unread}</span>
+                  </div>
+                  <div>
+                    <div style={{color:T.blue,fontWeight:700,fontSize:14}}>Nova{unread>1?"s":""} mensagem{unread>1?"s":""} não lida{unread>1?"s":""}</div>
+                    <div style={{color:T.dim,fontSize:12,marginTop:2}}>Clique para ver {unread>1?`as ${unread} mensagens`:"a mensagem"}</div>
+                  </div>
+                </div>
+                <span style={{color:T.blue,fontSize:22,fontWeight:300}}>›</span>
+              </div>
+            )}
             {pPay>0&&<div onClick={()=>setActive("payments")} style={{padding:"14px 16px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer"}}><div><div style={{color:T.amber,fontWeight:600}}>💳 Comprovantes para revisar</div><div style={{color:T.dim,fontSize:12,marginTop:2}}>{pPay} aguardando confirmação</div></div><span style={{color:T.amber,fontSize:20}}>›</span></div>}
           </div>
         )}
@@ -532,6 +548,21 @@ function Dashboard({user,messages,payments,caseStatus,clients,mobile,setActive})
           <Card key={k.label} style={{padding:16,textAlign:"center"}}><div style={{color:k.color,fontSize:22,fontWeight:700}}>{k.value}</div><div style={{color:T.faint,fontSize:11,marginTop:4}}>{k.label}</div></Card>
         ))}
       </div>
+      {unread>0&&(
+        <div onClick={()=>setActive("messages")} style={{padding:"14px 16px",background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.35)",borderRadius:14,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",animation:"pulse-blue 2s ease-in-out infinite"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{position:"relative",flexShrink:0}}>
+              <span style={{fontSize:24}}>✉</span>
+              <span style={{position:"absolute",top:-4,right:-6,minWidth:18,height:18,borderRadius:99,background:T.blue,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{unread}</span>
+            </div>
+            <div>
+              <div style={{color:T.blue,fontWeight:700,fontSize:14}}>Nova{unread>1?"s":""} mensagem{unread>1?"s":""} da Zion Solutions</div>
+              <div style={{color:T.dim,fontSize:12,marginTop:2}}>Clique para ler {unread>1?`as ${unread} mensagens`:"a mensagem"}</div>
+            </div>
+          </div>
+          <span style={{color:T.blue,fontSize:22,fontWeight:300}}>›</span>
+        </div>
+      )}
       <Card>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}><span style={{color:T.faint,fontSize:12,textTransform:"uppercase",letterSpacing:"0.07em"}}>Financeiro</span><span style={{color:T.gold,fontWeight:700}}>{pct}%</span></div>
         <ProgBar value={totalPago} total={totalOwed}/>
