@@ -16,20 +16,18 @@ const FIREBASE_CONFIG = {
 // ─────────────────────────────────────────────────────────────────────────────
 // FIREBASE SDK — carregado dinamicamente via CDN
 // ─────────────────────────────────────────────────────────────────────────────
+import { initializeApp } from "firebase/app";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
+import {
+  getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc,
+  onSnapshot, query, where, orderBy, serverTimestamp,
+} from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 let firebaseApp, auth, db, storage, fbFunctions;
 
 async function loadFirebase() {
   if (firebaseApp) return;
-  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-  const { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } =
-    await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-  const {
-    getFirestore, collection, doc, getDocs, getDoc, addDoc, updateDoc,
-    onSnapshot, query, where, orderBy, serverTimestamp,
-  } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-  const { getStorage, ref, uploadBytes, getDownloadURL } =
-    await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js");
-
   firebaseApp = initializeApp(FIREBASE_CONFIG);
   auth = { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, instance: getAuth(firebaseApp) };
   db = {
