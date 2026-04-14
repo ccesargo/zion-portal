@@ -1704,7 +1704,7 @@ function Clients({clients,setClients,mobile}) {
               <Btn variant="ghost" onClick={()=>openEditPlan(c)} style={{padding:"5px 12px",fontSize:12}}>💰 {c.plan?"Plano":"Def. plano"}</Btn>
               <Btn variant="ghost" onClick={()=>openEditProtos(c)} style={{padding:"5px 12px",fontSize:12}}>🔢 Protocolos</Btn>
               <Btn variant="ghost" onClick={()=>setViewProfile(c)} style={{padding:"5px 12px",fontSize:12}}>👁 Perfil</Btn>
-              <Btn variant="danger" onClick={()=>setDel(c.uid)} style={{padding:"5px 12px",fontSize:12}}>🗑 Excluir</Btn>
+              <Btn variant="danger" onClick={()=>setDel(c.uid||c.id)} style={{padding:"5px 12px",fontSize:12}}>🗑 Excluir</Btn>
             </div>
           </div>
         </Card>
@@ -1945,8 +1945,8 @@ function Clients({clients,setClients,mobile}) {
       {/* Confirmar exclusão */}
       <Overlay open={!!del} onClose={()=>setDel(null)} title="Confirmar remoção" mobile={mobile}>
         <div style={{padding:"14px 16px",background:"rgba(239,68,68,0.08)",borderRadius:12,marginBottom:16,border:"1px solid rgba(239,68,68,0.2)"}}>
-          <div style={{color:T.text,fontWeight:600,fontSize:15}}>{clients.find(c=>c.uid===del)?.name}</div>
-          <div style={{color:T.faint,fontSize:13,marginTop:4}}>{clients.find(c=>c.uid===del)?.email}</div>
+          <div style={{color:T.text,fontWeight:600,fontSize:15}}>{clients.find(c=>(c.uid||c.id)===del)?.name}</div>
+          <div style={{color:T.faint,fontSize:13,marginTop:4}}>{clients.find(c=>(c.uid||c.id)===del)?.email}</div>
         </div>
         <p style={{color:T.dim,marginBottom:8,fontSize:14,lineHeight:1.6}}>Todos os dados deste cliente serão removidos permanentemente:</p>
         <div style={{padding:"12px 14px",background:"rgba(239,68,68,0.06)",borderRadius:10,marginBottom:20,fontSize:13,color:T.dim,lineHeight:1.8}}>
@@ -1957,7 +1957,7 @@ function Clients({clients,setClients,mobile}) {
         </div>
         <div style={{display:"flex",gap:10}}>
           <Btn variant="danger" onClick={async()=>{
-            const clientToDelete = clients.find(c=>c.uid===del);
+            const clientToDelete = clients.find(c=>(c.uid||c.id)===del);
             const clientId = clientToDelete?.clientId || del;
             setMsg({type:"success", text:"Removendo cliente..."});
             try {
@@ -1965,7 +1965,7 @@ function Clients({clients,setClients,mobile}) {
                 await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
 
               // 1. Deleta documento do usuário no Firestore
-              await deleteDoc(doc(_db.inst, "users", del));
+              await deleteDoc(doc(_db.inst, "users", clientToDelete?.uid||clientToDelete?.id||del));
 
               // 2. Deleta caseStatus do cliente
               try { await deleteDoc(doc(_db.inst, "caseStatus", clientId)); } catch(e){}
@@ -2002,7 +2002,7 @@ function Clients({clients,setClients,mobile}) {
 
             } catch(e) { console.warn("Erro ao deletar:", e); }
 
-            setClients(p=>p.filter(c=>c.uid!==del));
+            setClients(p=>p.filter(c=>(c.uid||c.id)!==del));
             setDel(null);
             setMsg({type:"success", text:`✓ ${clientToDelete?.name?.split(" ")[0]} removido completamente do sistema.`});
           }} style={{flex:1}}>Sim, excluir tudo</Btn>
