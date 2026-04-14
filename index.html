@@ -90,6 +90,12 @@ const DEVELOPER = {
   password: "dev_master_2026",
 };
 
+// E-mails dos administradores para notificações de novas mensagens de clientes
+const ADMIN_NOTIFY_EMAILS = [
+  { email: "admin@zionsolutions.com", name: "Zion Solutions" },
+  // Adicione mais admins aqui se necessário
+];
+
 async function writeLog(action, details={}) {
   try {
     await dbAdd("logs", {
@@ -552,7 +558,21 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
   const [sel,setSel]=useState(null), [open,setOpen]=useState(false);
   const [form,setForm]=useState({subject:"",body:"",source:"zion",clientId:""});
   const list=isAdmin?messages:messages.filter(m=>m.clientId===user.clientId);
+  const [confirmDel,setConfirmDel]=useState(null);
+  const [deleting,setDeleting]=useState(false);
   const openMsg=msg=>{setSel(msg);if(!msg.read){dbUpdate("messages",msg.id,{read:true});setMessages(p=>p.map(m=>m.id===msg.id?{...m,read:true}:m));}};
+  const canDelete=(msg)=>(isAdmin&&(msg.source==="zion"||msg.source==="sponsor"))||(!isAdmin&&msg.source==="client"&&msg.clientId===(user.clientId||user.uid));
+  const deleteMsg=async()=>{
+    if(!confirmDel)return; setDeleting(true);
+    try{
+      const{deleteDoc,doc}=await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      await deleteDoc(doc(_db.inst,"messages",confirmDel.id));
+      setMessages(p=>p.filter(m=>m.id!==confirmDel.id));
+      if(sel?.id===confirmDel.id)setSel(null);
+      setConfirmDel(null);
+    }catch(e){alert("Erro ao apagar: "+e.message);}
+    finally{setDeleting(false);}
+  };
 
   // Mostra nome do cliente na lista de mensagens (admin)
   const getClientName = (clientId) => {
@@ -576,6 +596,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
       <h2 style={{color:T.text,fontSize:18,fontWeight:700,margin:0}}>{sel.subject}</h2>
       <div style={{display:"flex",gap:8}}><Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill><span style={{color:T.faint,fontSize:12,alignSelf:"center"}}>{fmt(sel.date)}</span></div>
       <Card><p style={{color:"rgba(255,255,255,0.8)",lineHeight:1.75,fontSize:15,margin:0,whiteSpace:"pre-wrap"}}>{sel.body}</p></Card>
+      {canDelete(sel)&&<button onClick={()=>setConfirmDel(sel)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"11px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,color:T.red,fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",width:"100%"}}>🗑 Apagar esta mensagem</button>}
     </div>
   );
 
@@ -611,8 +632,32 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
               <Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill>
             </div>
             <p style={{color:"rgba(255,255,255,0.8)",lineHeight:1.75,fontSize:14,margin:0,whiteSpace:"pre-wrap"}}>{sel.body}</p>
+            {canDelete(sel)&&(
+              <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${T.border}`}}>
+                <button onClick={()=>setConfirmDel(sel)} style={{display:"flex",alignItems:"center",gap:6,padding:"8px 16px",background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:9,color:T.red,fontSize:12,cursor:"pointer",fontFamily:"Georgia,serif"}}>🗑 Apagar esta mensagem</button>
+              </div>
+            )}
           </div>):(<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:T.faint,fontSize:14}}>Selecione uma mensagem</div>)}
         </Card>
+      )}
+      {/* Modal confirmação de exclusão */}
+      {confirmDel&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.8)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:16}}>
+          <Card style={{width:420,maxWidth:"100%"}}>
+            <h3 style={{color:T.red,margin:"0 0 14px",fontSize:18}}>🗑 Apagar Mensagem</h3>
+            <div style={{padding:"14px 16px",background:"rgba(239,68,68,0.07)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12,marginBottom:18}}>
+              <div style={{color:T.text,fontWeight:600,fontSize:14,marginBottom:4}}>{confirmDel.subject}</div>
+              <div style={{color:T.faint,fontSize:12}}>De: {confirmDel.from} · {fmt(confirmDel.date)}</div>
+            </div>
+            <p style={{color:T.dim,fontSize:13,lineHeight:1.6,marginBottom:20}}>
+              Esta mensagem será <strong style={{color:T.red}}>apagada permanentemente do servidor</strong> para todos os envolvidos. Esta ação não pode ser desfeita.
+            </p>
+            <div style={{display:"flex",gap:10}}>
+              <Btn variant="danger" onClick={deleteMsg} disabled={deleting} style={{flex:1}}>{deleting?"Apagando…":"Sim, apagar"}</Btn>
+              <Btn variant="ghost" onClick={()=>setConfirmDel(null)} style={{flex:1}}>Cancelar</Btn>
+            </div>
+          </Card>
+        </div>
       )}
       <Overlay open={open} onClose={()=>setOpen(false)} title={isAdmin?"Nova Mensagem":"Enviar Mensagem para Zion"} mobile={mobile}>
         {!isAdmin&&<div style={{marginBottom:14,padding:"10px 14px",background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:10}}><span style={{color:"#A78BFA",fontSize:13}}>✉ Para: <strong>Zion Solutions</strong></span></div>}
@@ -2740,9 +2785,24 @@ function App() {
 
   const handleAddMessage = async (msgData) => {
     const id = await dbAdd("messages", msgData);
-    await writeLog("message_sent", {subject:msgData.subject, clientId:msgData.clientId});
-    // Notificar cliente por e-mail quando recebe nova mensagem
-    if (msgData.clientId) {
+    await writeLog("message_sent", {subject:msgData.subject, clientId:msgData.clientId, source:msgData.source});
+    if (msgData.source === "client") {
+      // Cliente enviou → notificar admins
+      const senderName = msgData.from || "Cliente";
+      for (const admin of ADMIN_NOTIFY_EMAILS) {
+        await sendEmail({
+          to_email:   admin.email,
+          to_name:    admin.name,
+          subject:    `📩 Nova mensagem de ${senderName} — Zion Portal`,
+          event_type: "new_message_admin",
+          message:    `${senderName} enviou uma nova mensagem no portal:\n\n` +
+                      `📌 Assunto: ${msgData.subject}\n\n` +
+                      `"${msgData.body}"\n\n` +
+                      `Acesse o portal para responder.`,
+        });
+      }
+    } else {
+      // Zion/Sponsor enviou → notificar cliente
       const cl = clients.find(c=>(c.clientId||c.uid)===msgData.clientId);
       if (cl?.email) {
         await sendEmail({
