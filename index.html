@@ -1349,9 +1349,86 @@ function Bulletin({user,bulletin,updateBulletin,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CLIENTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DEPENDENTS TAB — sub-component
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function DependentsTab({form, setForm}) {
+  const deps = (() => { try { return JSON.parse(form.dependents||"[]"); } catch{ return []; } })();
+  const setDeps = (arr) => setForm(p=>({...p, dependents: JSON.stringify(arr)}));
+  const add = () => setDeps([...deps, {name:"",relation:"cônjuge",dob:"",passportNum:"",passportExp:"",visaType:"",visaExp:"",inProcess:false}]);
+  const upd = (i, key, val) => { const a=[...deps]; a[i]={...a[i],[key]:val}; setDeps(a); };
+  const rem = (i) => setDeps(deps.filter((_,j)=>j!==i));
+  const RELATIONS = ["cônjuge","filho(a)","pai/mãe","outro"];
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,color:T.blue,fontSize:12,fontWeight:600}}>👨‍👩‍👧 Dependentes</div>
+        <Btn onClick={add} style={{padding:"7px 14px",fontSize:12}}>+ Adicionar</Btn>
+      </div>
+      {deps.length===0&&(
+        <div style={{textAlign:"center",padding:"30px 0",color:T.faint,fontSize:13}}>
+          <div style={{fontSize:32,marginBottom:10}}>👨‍👩‍👧</div>
+          Nenhum dependente adicionado.<br/>
+          <span style={{fontSize:12}}>Clique em "+ Adicionar" para incluir cônjuge, filhos, etc.</span>
+        </div>
+      )}
+      {deps.map((dep,i)=>(
+        <div key={i} style={{marginBottom:16,padding:16,background:"rgba(255,255,255,0.04)",border:`1px solid ${T.border}`,borderRadius:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <span style={{color:T.gold,fontWeight:600,fontSize:14}}>Dependente {i+1}</span>
+            <button onClick={()=>rem(i)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:7,color:T.red,fontSize:12,cursor:"pointer",padding:"4px 10px",fontFamily:"Georgia,serif"}}>Remover</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <FInp label="Nome completo" value={dep.name} onChange={e=>upd(i,"name",e.target.value)} placeholder="Nome do dependente"/>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Parentesco</div><select value={dep.relation} onChange={e=>upd(i,"relation",e.target.value)} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{RELATIONS.map(r=><option key={r} value={r} style={{background:"#0D1117"}}>{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}</select></div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            <FInp label="Data de nascimento" type="date" value={dep.dob} onChange={e=>upd(i,"dob",e.target.value)}/>
+            <FInp label="Nº Passaporte" value={dep.passportNum} onChange={e=>upd(i,"passportNum",e.target.value)} placeholder="AB123456"/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+            <FInp label="Validade Passaporte" type="date" value={dep.passportExp} onChange={e=>upd(i,"passportExp",e.target.value)}/>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Visto</div><select value={dep.visaType} onChange={e=>upd(i,"visaType",e.target.value)} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{"Selecione,B-1/B-2,F-2,H-4,TD,Outro".split(",").map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v}</option>)}</select></div>
+            <FInp label="Validade Visto" type="date" value={dep.visaExp} onChange={e=>upd(i,"visaExp",e.target.value)}/>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"rgba(232,200,122,0.07)",borderRadius:10,border:"1px solid rgba(232,200,122,0.15)"}}>
+            <input type="checkbox" id={`dep-proc-${i}`} checked={dep.inProcess} onChange={e=>upd(i,"inProcess",e.target.checked)} style={{width:16,height:16,accentColor:T.gold,cursor:"pointer"}}/>
+            <label htmlFor={`dep-proc-${i}`} style={{color:T.dim,fontSize:13,cursor:"pointer"}}>Incluso no processo de imigração</label>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Clients({clients,setClients,mobile}) {
   const TYPES=["EB-1","EB-2","EB-3","EB-3 Unskilled","O-1","H-1B","L-1","TN"];
-  const EMPTY={name:"",email:"",caseType:"EB-3",sponsor:"",priorityDate:"",pAssinatura:"3500",pParcela:"550",pNumParcelas:"10",pI140:"4500",pDependente:"0",pObs:""};
+  const EMPTY={
+    // Aba 1 — Processo
+    name:"",email:"",caseType:"EB-3",sponsor:"",priorityDate:"",
+    pAssinatura:"3500",pParcela:"550",pNumParcelas:"10",pI140:"4500",pDependente:"0",pObs:"",
+    // Aba 2 — Dados Pessoais
+    phone:"",whatsapp:"",dob:"",nationality:"Brasileira",cpf:"",ssn:"",
+    maritalStatus:"solteiro",occupation:"",
+    addrStreet:"",addrCity:"",addrState:"",addrZip:"",
+    // Aba 3 — Documentos
+    passportNum:"",passportExp:"",
+    visaType:"",visaNum:"",visaExp:"",entryDate:"",i94:"",
+    eadNum:"",eadExp:"",aNumber:"",
+    // Aba 4 — Dependentes (array como JSON string)
+    dependents:"[]",
+    // Aba 5 — Emprego
+    currentEmployer:"",currentRole:"",employmentStart:"",salary:"",
+    prevEmployers:"",
+  };
+  const [formTab,setFormTab]=useState("processo");
+  const FORM_TABS=[
+    {id:"processo",  label:"📋 Processo"},
+    {id:"pessoal",   label:"👤 Pessoal"},
+    {id:"documentos",label:"🪪 Documentos"},
+    {id:"dependentes",label:"👨‍👩‍👧 Dependentes"},
+    {id:"emprego",   label:"💼 Emprego"},
+  ];
   const [open,setOpen]=useState(false), [planView,setPlanView]=useState(null), [del,setDel]=useState(null);
   const [form,setForm]=useState(EMPTY);
   const [loading,setLoading]=useState(false);
@@ -1384,6 +1461,24 @@ function Clients({clients,setClients,mobile}) {
         clientId, caseType:form.caseType, sponsor:form.sponsor,
         priorityDate:form.priorityDate, plan,
         protocols: { perm:form.proto_perm||"", i140:form.proto_i140||"", i485:form.proto_i485||"", nvc:form.proto_nvc||"" },
+        personal: {
+          phone:form.phone, whatsapp:form.whatsapp, dob:form.dob,
+          nationality:form.nationality, cpf:form.cpf, ssn:form.ssn,
+          maritalStatus:form.maritalStatus, occupation:form.occupation,
+          address:{ street:form.addrStreet, city:form.addrCity, state:form.addrState, zip:form.addrZip },
+        },
+        documents: {
+          passportNum:form.passportNum, passportExp:form.passportExp,
+          visaType:form.visaType, visaNum:form.visaNum, visaExp:form.visaExp,
+          entryDate:form.entryDate, i94:form.i94, eadNum:form.eadNum,
+          eadExp:form.eadExp, aNumber:form.aNumber,
+        },
+        dependents: (() => { try{ return JSON.parse(form.dependents||"[]"); } catch{ return []; } })(),
+        employment: {
+          currentEmployer:form.currentEmployer, currentRole:form.currentRole,
+          employmentStart:form.employmentStart, salary:form.salary,
+          prevEmployers:form.prevEmployers,
+        },
       });
 
       // 3. Criar caseStatus padrão
@@ -1485,6 +1580,7 @@ function Clients({clients,setClients,mobile}) {
   const [editProtos,setEditProtos] = useState(null);
   const [protosForm,setProtosForm] = useState({perm:"",i140:"",i485:"",nvc:""});
   const [savingProtos,setSavingProtos] = useState(false);
+  const [viewProfile,setViewProfile] = useState(null);
   const openEditProtos = (c) => { setProtosForm({perm:c.protocols?.perm||"",i140:c.protocols?.i140||"",i485:c.protocols?.i485||"",nvc:c.protocols?.nvc||""}); setEditProtos(c); };
   const saveProtos = async() => {
     setSavingProtos(true);
@@ -1578,6 +1674,10 @@ function Clients({clients,setClients,mobile}) {
             <div style={{flex:1}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6,flexWrap:"wrap"}}><span style={{color:T.text,fontWeight:700,fontSize:16}}>{c.name}</span><Pill>{c.caseType||"EB-3"}</Pill></div>
               <div style={{color:T.dim,fontSize:13,marginBottom:2}}>✉ {c.email}</div>
+              {c.personal?.phone&&<div style={{color:T.faint,fontSize:12,marginBottom:2}}>📞 {c.personal.phone}{c.personal?.whatsapp?" · 💬 "+c.personal.whatsapp:""}</div>}
+              {c.personal?.address?.city&&<div style={{color:T.faint,fontSize:12,marginBottom:2}}>📍 {c.personal.address.city}, {c.personal.address.state}</div>}
+              {c.documents?.visaExp&&new Date(c.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)&&<div style={{color:T.red,fontSize:12,marginBottom:2}}>⚠️ Visto vence: {fmt(c.documents.visaExp)}</div>}
+              {c.documents?.passportExp&&new Date(c.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)&&<div style={{color:T.amber,fontSize:12,marginBottom:2}}>⚠️ Passaporte vence: {fmt(c.documents.passportExp)}</div>}
               {c.sponsor&&<div style={{color:T.faint,fontSize:12,marginBottom:2}}>🏢 {c.sponsor}</div>}
               {c.priorityDate&&<div style={{color:T.faint,fontSize:12,marginBottom:6}}>📅 Priority Date: {fmt(c.priorityDate)}</div>}
               {c.plan
@@ -1603,34 +1703,133 @@ function Clients({clients,setClients,mobile}) {
               <Btn variant="ghost" onClick={()=>openEditClient(c)} style={{padding:"5px 12px",fontSize:12}}>✏️ Editar</Btn>
               <Btn variant="ghost" onClick={()=>openEditPlan(c)} style={{padding:"5px 12px",fontSize:12}}>💰 {c.plan?"Plano":"Def. plano"}</Btn>
               <Btn variant="ghost" onClick={()=>openEditProtos(c)} style={{padding:"5px 12px",fontSize:12}}>🔢 Protocolos</Btn>
+              <Btn variant="ghost" onClick={()=>setViewProfile(c)} style={{padding:"5px 12px",fontSize:12}}>👁 Perfil</Btn>
               <Btn variant="danger" onClick={()=>setDel(c.uid)} style={{padding:"5px 12px",fontSize:12}}>🗑 Excluir</Btn>
             </div>
           </div>
         </Card>
       ))}
       {/* Novo cliente */}
-      <Overlay open={open} onClose={()=>setOpen(false)} title="Novo Cliente" mobile={mobile}>
-        <div style={{padding:"8px 12px",background:"rgba(232,200,122,0.08)",borderRadius:10,marginBottom:14,color:T.gold,fontSize:12,fontWeight:600}}>👤 Dados do Cliente</div>
-        <FInp label="Nome completo *" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="Nome do cliente"/>
-        <FInp label="E-mail *" type="email" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} placeholder="email@cliente.com"/>
-        {form.name&&(
-          <div style={{padding:"10px 14px",background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:10,marginBottom:14,fontSize:13,color:T.dim}}>
-            🔑 Senha padrão: <strong style={{color:T.text,fontFamily:"monospace"}}>{form.name.trim().split(" ")[0].toLowerCase()}</strong>
-            <div style={{fontSize:11,marginTop:4,color:T.faint}}>O cliente pode alterar no primeiro acesso via "Esqueci minha senha"</div>
-          </div>
-        )}
-        <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div><select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}</select></div>
-        <FInp label="Sponsor / Employer" value={form.sponsor} onChange={e=>setForm(p=>({...p,sponsor:e.target.value}))} placeholder="Empresa patrocinadora"/>
-        <FInp label="Priority Date" type="date" value={form.priorityDate} onChange={e=>setForm(p=>({...p,priorityDate:e.target.value}))}/>
-        <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"4px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🔢 Números de Protocolo <span style={{color:T.faint,fontWeight:400}}>(opcional — pode preencher depois)</span></div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-          {PROTOCOL_SITES.map(site=>(
-            <FInp key={site.id} label={site.label} value={form[`proto_${site.id}`]||""} onChange={e=>setForm(p=>({...p,[`proto_${site.id}`]:e.target.value}))} placeholder={site.placeholder}/>
+      <Overlay open={open} onClose={()=>{setOpen(false);setFormTab("processo");}} title="Novo Cliente" mobile={mobile} width={560}>
+        {/* Tab bar */}
+        <div style={{display:"flex",gap:4,marginBottom:20,overflowX:"auto",paddingBottom:4}}>
+          {FORM_TABS.map(t=>(
+            <button key={t.id} onClick={()=>setFormTab(t.id)} style={{padding:"7px 12px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:600,fontSize:12,whiteSpace:"nowrap",background:formTab===t.id?`linear-gradient(135deg,${T.goldDim},${T.gold})`:"rgba(255,255,255,0.06)",color:formTab===t.id?"#0A0F1E":T.dim,fontFamily:"Georgia,serif",flexShrink:0}}>
+              {t.label}
+            </button>
           ))}
         </div>
-        {planFormJSX}
-        {msg&&<div style={{padding:"10px 14px",background:msg.type==="success"?"rgba(16,185,129,0.12)":"rgba(239,68,68,0.12)",border:`1px solid ${msg.type==="success"?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`,borderRadius:10,color:msg.type==="success"?T.green:T.red,fontSize:13,marginBottom:14}}>{msg.text}</div>}
-        <div style={{display:"flex",gap:10}}><Btn onClick={add} disabled={loading} style={{flex:1}}>{loading?"Cadastrando…":"Cadastrar e Enviar Boas-Vindas"}</Btn><Btn variant="ghost" onClick={()=>setOpen(false)} style={{flex:1}}>Cancelar</Btn></div>
+
+        {/* ABA 1 — PROCESSO */}
+        {formTab==="processo"&&(
+          <div>
+            <div style={{padding:"8px 12px",background:"rgba(232,200,122,0.08)",borderRadius:10,marginBottom:14,color:T.gold,fontSize:12,fontWeight:600}}>👤 Identificação</div>
+            <FInp label="Nome completo *" value={form.name} onChange={e=>setForm(p=>({...p,name:e.target.value}))} placeholder="Nome do cliente"/>
+            <FInp label="E-mail *" type="email" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} placeholder="email@cliente.com"/>
+            {form.name&&<div style={{padding:"10px 14px",background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:10,marginBottom:14,fontSize:13,color:T.dim}}>🔑 Senha padrão: <strong style={{color:T.text,fontFamily:"monospace"}}>{form.name.trim().split(" ")[0].toLowerCase()}</strong><div style={{fontSize:11,marginTop:4,color:T.faint}}>Cliente pode alterar via "Esqueci minha senha"</div></div>}
+            <div style={{padding:"8px 12px",background:"rgba(232,200,122,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.gold,fontSize:12,fontWeight:600}}>📋 Processo Imigratório</div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div><select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}</select></div>
+            <FInp label="Sponsor / Employer" value={form.sponsor} onChange={e=>setForm(p=>({...p,sponsor:e.target.value}))} placeholder="Empresa patrocinadora"/>
+            <FInp label="Priority Date" type="date" value={form.priorityDate} onChange={e=>setForm(p=>({...p,priorityDate:e.target.value}))}/>
+            <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🔢 Protocolos <span style={{color:T.faint,fontWeight:400}}>(opcional)</span></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {PROTOCOL_SITES.map(site=>(<FInp key={site.id} label={site.label} value={form[`proto_${site.id}`]||""} onChange={e=>setForm(p=>({...p,[`proto_${site.id}`]:e.target.value}))} placeholder={site.placeholder}/>))}
+            </div>
+            {planFormJSX}
+          </div>
+        )}
+
+        {/* ABA 2 — DADOS PESSOAIS */}
+        {formTab==="pessoal"&&(
+          <div>
+            <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,marginBottom:14,color:T.blue,fontSize:12,fontWeight:600}}>📞 Contato</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="Telefone" value={form.phone} onChange={e=>setForm(p=>({...p,phone:e.target.value}))} placeholder="(617) 000-0000"/>
+              <FInp label="WhatsApp" value={form.whatsapp} onChange={e=>setForm(p=>({...p,whatsapp:e.target.value}))} placeholder="+55 11 00000-0000"/>
+            </div>
+            <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🧑 Informações Pessoais</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="Data de nascimento" type="date" value={form.dob} onChange={e=>setForm(p=>({...p,dob:e.target.value}))}/>
+              <FInp label="Nacionalidade" value={form.nationality} onChange={e=>setForm(p=>({...p,nationality:e.target.value}))} placeholder="Brasileira"/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="CPF (Brasil)" value={form.cpf} onChange={e=>setForm(p=>({...p,cpf:e.target.value}))} placeholder="000.000.000-00"/>
+              <FInp label="SSN (EUA, opcional)" value={form.ssn} onChange={e=>setForm(p=>({...p,ssn:e.target.value}))} placeholder="XXX-XX-XXXX"/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Estado Civil</div><select value={form.maritalStatus} onChange={e=>setForm(p=>({...p,maritalStatus:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{["solteiro","casado","divorciado","viúvo","união estável"].map(s=><option key={s} value={s} style={{background:"#0D1117"}}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}</select></div>
+              <FInp label="Profissão / Ocupação" value={form.occupation} onChange={e=>setForm(p=>({...p,occupation:e.target.value}))} placeholder="Ex: Cook, Caregiver"/>
+            </div>
+            <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🏠 Endereço nos EUA</div>
+            <FInp label="Rua e número" value={form.addrStreet} onChange={e=>setForm(p=>({...p,addrStreet:e.target.value}))} placeholder="123 Main St, Apt 2"/>
+            <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:12}}>
+              <FInp label="Cidade" value={form.addrCity} onChange={e=>setForm(p=>({...p,addrCity:e.target.value}))} placeholder="Milford"/>
+              <FInp label="Estado" value={form.addrState} onChange={e=>setForm(p=>({...p,addrState:e.target.value}))} placeholder="MA"/>
+              <FInp label="ZIP" value={form.addrZip} onChange={e=>setForm(p=>({...p,addrZip:e.target.value}))} placeholder="01757"/>
+            </div>
+          </div>
+        )}
+
+        {/* ABA 3 — DOCUMENTOS */}
+        {formTab==="documentos"&&(
+          <div>
+            <div style={{padding:"8px 12px",background:"rgba(139,92,246,0.1)",borderRadius:10,marginBottom:14,color:"#A78BFA",fontSize:12,fontWeight:600}}>🛂 Passaporte</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="Número do passaporte" value={form.passportNum} onChange={e=>setForm(p=>({...p,passportNum:e.target.value}))} placeholder="AB123456"/>
+              <FInp label="Validade" type="date" value={form.passportExp} onChange={e=>setForm(p=>({...p,passportExp:e.target.value}))}/>
+            </div>
+            {form.passportExp&&new Date(form.passportExp)<new Date(Date.now()+180*24*60*60*1000)&&(
+              <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,marginBottom:14,color:T.red,fontSize:13}}>⚠️ Passaporte vence em menos de 6 meses!</div>
+            )}
+            <div style={{padding:"8px 12px",background:"rgba(139,92,246,0.1)",borderRadius:10,margin:"6px 0 14px",color:"#A78BFA",fontSize:12,fontWeight:600}}>🇺🇸 Visto Atual</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+              <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Visto</div><select value={form.visaType} onChange={e=>setForm(p=>({...p,visaType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{"Selecione,B-1/B-2,F-1,J-1,H-1B,H-4,L-1,O-1,TN,E-2,EB-1,EB-2,EB-3,Sem visto (EWI),Outro".split(",").map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v}</option>)}</select></div>
+              <FInp label="Número do visto" value={form.visaNum} onChange={e=>setForm(p=>({...p,visaNum:e.target.value}))} placeholder="V0000000"/>
+              <FInp label="Validade" type="date" value={form.visaExp} onChange={e=>setForm(p=>({...p,visaExp:e.target.value}))}/>
+            </div>
+            {form.visaExp&&new Date(form.visaExp)<new Date(Date.now()+90*24*60*60*1000)&&(
+              <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,marginBottom:14,color:T.red,fontSize:13}}>⚠️ Visto vence em menos de 90 dias!</div>
+            )}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="Data de entrada nos EUA" type="date" value={form.entryDate} onChange={e=>setForm(p=>({...p,entryDate:e.target.value}))}/>
+              <FInp label="I-94 Number" value={form.i94} onChange={e=>setForm(p=>({...p,i94:e.target.value}))} placeholder="00000000000"/>
+            </div>
+            <div style={{padding:"8px 12px",background:"rgba(139,92,246,0.1)",borderRadius:10,margin:"6px 0 14px",color:"#A78BFA",fontSize:12,fontWeight:600}}>📄 Outros Documentos</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="EAD Number" value={form.eadNum} onChange={e=>setForm(p=>({...p,eadNum:e.target.value}))} placeholder="SRC0000000000"/>
+              <FInp label="EAD Validade" type="date" value={form.eadExp} onChange={e=>setForm(p=>({...p,eadExp:e.target.value}))}/>
+            </div>
+            <FInp label="A-Number (Alien Registration)" value={form.aNumber} onChange={e=>setForm(p=>({...p,aNumber:e.target.value}))} placeholder="A000000000"/>
+          </div>
+        )}
+
+        {/* ABA 4 — DEPENDENTES */}
+        {formTab==="dependentes"&&(
+          <DependentsTab form={form} setForm={setForm}/>
+        )}
+
+        {/* ABA 5 — EMPREGO */}
+        {formTab==="emprego"&&(
+          <div>
+            <div style={{padding:"8px 12px",background:"rgba(16,185,129,0.08)",borderRadius:10,marginBottom:14,color:T.green,fontSize:12,fontWeight:600}}>💼 Emprego Atual</div>
+            <FInp label="Empregador atual" value={form.currentEmployer} onChange={e=>setForm(p=>({...p,currentEmployer:e.target.value}))} placeholder="Nome da empresa"/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <FInp label="Cargo / Função" value={form.currentRole} onChange={e=>setForm(p=>({...p,currentRole:e.target.value}))} placeholder="Ex: Cook, Caregiver"/>
+              <FInp label="Data de início" type="date" value={form.employmentStart} onChange={e=>setForm(p=>({...p,employmentStart:e.target.value}))}/>
+            </div>
+            <FInp label="Salário por hora ($)" value={form.salary} onChange={e=>setForm(p=>({...p,salary:e.target.value}))} placeholder="Ex: 22.00" type="number"/>
+            <div style={{padding:"8px 12px",background:"rgba(16,185,129,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.green,fontSize:12,fontWeight:600}}>📋 Histórico de Empregos nos EUA</div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Empregos anteriores (opcional)</div><textarea value={form.prevEmployers} onChange={e=>setForm(p=>({...p,prevEmployers:e.target.value}))} rows={4} placeholder="Ex:&#10;Edgstone Hospitality — Cook — Jan 2023 a Dez 2023&#10;Embassy Suites — Cook — Jan 2024 a atual" style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:13,resize:"none",boxSizing:"border-box",fontFamily:"Georgia,serif"}}/></div>
+          </div>
+        )}
+
+        {msg&&<div style={{padding:"10px 14px",background:msg.type==="success"?"rgba(16,185,129,0.12)":"rgba(239,68,68,0.12)",border:`1px solid ${msg.type==="success"?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`,borderRadius:10,color:msg.type==="success"?T.green:T.red,fontSize:13,marginBottom:14,marginTop:8}}>{msg.text}</div>}
+        <div style={{display:"flex",gap:10,marginTop:8}}>
+          {formTab!=="processo"&&<Btn variant="ghost" onClick={()=>setFormTab(FORM_TABS[FORM_TABS.findIndex(t=>t.id===formTab)-1].id)} style={{padding:"10px 16px",fontSize:13}}>‹ Anterior</Btn>}
+          {formTab!=="emprego"&&<Btn variant="ghost" onClick={()=>setFormTab(FORM_TABS[FORM_TABS.findIndex(t=>t.id===formTab)+1].id)} style={{flex:1,fontSize:13}}>Próximo ›</Btn>}
+          {formTab==="emprego"&&<Btn onClick={add} disabled={loading} style={{flex:1}}>{loading?"Cadastrando…":"Cadastrar e Enviar Boas-Vindas"}</Btn>}
+          <Btn variant="ghost" onClick={()=>{setOpen(false);setFormTab("processo");}} style={{padding:"10px 16px",fontSize:13}}>Cancelar</Btn>
+        </div>
       </Overlay>
       {/* Ver plano */}
       <Overlay open={!!planView} onClose={()=>setPlanView(null)} title={`Plano — ${planView?.name?.split(" ")[0]}`} mobile={mobile}>
@@ -1642,6 +1841,35 @@ function Clients({clients,setClients,mobile}) {
         </div>}
         {planView?.plan?.obs&&<div style={{padding:"10px 14px",background:T.surface,borderRadius:10,color:T.dim,fontSize:13,marginBottom:12}}>📝 {planView.plan.obs}</div>}
         <div style={{color:T.faint,fontSize:11}}>⚠️ Taxas USCIS cobradas separadamente pelo governo.</div>
+      </Overlay>
+      {/* Ver Perfil Completo */}
+      <Overlay open={!!viewProfile} onClose={()=>setViewProfile(null)} title={`Perfil — ${viewProfile?.name?.split(" ").slice(0,2).join(" ")}`} mobile={mobile} width={560}>
+        {viewProfile&&(()=>{
+          const c=viewProfile;
+          const Section=({icon,label,children})=><div style={{marginBottom:20}}><div style={{padding:"7px 12px",background:"rgba(255,255,255,0.04)",borderRadius:9,marginBottom:12,color:T.gold,fontSize:12,fontWeight:600}}>{icon} {label}</div>{children}</div>;
+          const Row=({label,value})=>value?<div style={{display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:`1px solid ${T.border}`}}><span style={{color:T.faint,fontSize:13}}>{label}</span><span style={{color:T.text,fontSize:13,fontWeight:600,textAlign:"right",maxWidth:"60%"}}>{value}</span></div>:null;
+          const deps=Array.isArray(c.dependents)?c.dependents:[];
+          return(
+            <div style={{maxHeight:"70vh",overflowY:"auto"}}>
+              <Section icon="📋" label="Processo">
+                <Row label="Tipo" value={c.caseType}/><Row label="Sponsor" value={c.sponsor}/><Row label="Priority Date" value={fmt(c.priorityDate)}/><Row label="E-mail" value={c.email}/>
+              </Section>
+              {c.personal&&<Section icon="👤" label="Dados Pessoais">
+                <Row label="Telefone" value={c.personal.phone}/><Row label="WhatsApp" value={c.personal.whatsapp}/><Row label="Nascimento" value={fmt(c.personal.dob)}/><Row label="Nacionalidade" value={c.personal.nationality}/><Row label="CPF" value={c.personal.cpf}/><Row label="Estado Civil" value={c.personal.maritalStatus}/><Row label="Profissão" value={c.personal.occupation}/><Row label="Endereço" value={c.personal.address?.street&&`${c.personal.address.street}, ${c.personal.address.city} ${c.personal.address.state} ${c.personal.address.zip}`}/>
+              </Section>}
+              {c.documents&&<Section icon="🪪" label="Documentos">
+                <Row label="Passaporte" value={c.documents.passportNum&&`${c.documents.passportNum} (val: ${fmt(c.documents.passportExp)})`}/><Row label="Visto" value={c.documents.visaType&&`${c.documents.visaType} ${c.documents.visaNum||""} (val: ${fmt(c.documents.visaExp)})`}/><Row label="Entrada nos EUA" value={fmt(c.documents.entryDate)}/><Row label="I-94" value={c.documents.i94}/><Row label="EAD" value={c.documents.eadNum&&`${c.documents.eadNum} (val: ${fmt(c.documents.eadExp)})`}/><Row label="A-Number" value={c.documents.aNumber}/>
+              </Section>}
+              {deps.length>0&&<Section icon="👨‍👩‍👧" label="Dependentes">
+                {deps.map((d,i)=><div key={i} style={{padding:"10px 12px",background:"rgba(255,255,255,0.04)",borderRadius:10,marginBottom:8}}><div style={{color:T.text,fontWeight:600,fontSize:14,marginBottom:4}}>{d.name} <span style={{color:T.faint,fontWeight:400,fontSize:12}}>({d.relation})</span></div><div style={{color:T.faint,fontSize:12}}>Nasc: {fmt(d.dob)} · Passaporte: {d.passportNum||"—"} · Visto: {d.visaType||"—"}{d.inProcess?" · ✅ No processo":""}</div></div>)}
+              </Section>}
+              {c.employment&&<Section icon="💼" label="Emprego">
+                <Row label="Empregador" value={c.employment.currentEmployer}/><Row label="Cargo" value={c.employment.currentRole}/><Row label="Início" value={fmt(c.employment.employmentStart)}/><Row label="Salário/hora" value={c.employment.salary&&`$${c.employment.salary}`}/>
+                {c.employment.prevEmployers&&<div style={{marginTop:10}}><div style={{color:T.faint,fontSize:12,marginBottom:6}}>Histórico:</div><div style={{color:T.dim,fontSize:13,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{c.employment.prevEmployers}</div></div>}
+              </Section>}
+            </div>
+          );
+        })()}
       </Overlay>
       {/* Editar Protocolos */}
       <Overlay open={!!editProtos} onClose={()=>setEditProtos(null)} title={`Protocolos — ${editProtos?.name?.split(" ")[0]}`} mobile={mobile}>
