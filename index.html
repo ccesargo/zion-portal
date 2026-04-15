@@ -1004,7 +1004,7 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
                         {p.status==="rejected" &&<span style={{color:T.red}}>✗ Rejeitado</span>}
                         {p.status==="pending_review"&&<span style={{color:T.amber}}>⏳ Revisão</span>}
                       </div>
-                      {p.receiptUrl&&<a href={p.receiptUrl} target="_blank" rel="noreferrer" style={{color:T.blue,fontSize:11,textDecoration:"none",display:"block"}}>📎 comprovante</a>}
+                      {p.receiptUrl&&<a href={p.receiptUrl} target="_blank" rel="noreferrer" style={{color:T.blue,fontSize:11,textDecoration:"none",display:"block"}}>📎 Ver Drive</a>}
                     </div>
                     {/* Botão excluir — só para confirmados */}
                     {p.status==="confirmed"&&(
@@ -1107,9 +1107,10 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
     try {
       let finalReceiptUrl = receiptUrl||null;
       // Upload para Google Drive se cliente tem pasta e arquivo selecionado
-      if (receiptFile && clientData?.driveFolderId) {
+      const folderIdToUse = clientData?.driveFolderId || user?.driveFolderId;
+      if (receiptFile && folderIdToUse) {
         try {
-          const uploaded = await driveUploadFile(clientData.driveFolderId, "💳 Comprovantes de Pagamento", receiptFile);
+          const uploaded = await driveUploadFile(folderIdToUse, "💳 Comprovantes de Pagamento", receiptFile);
           finalReceiptUrl = uploaded.viewLink;
         } catch(e) {
           console.warn("Drive upload failed:", e.message);
@@ -1290,7 +1291,7 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
         )}
 
         {/* Link do comprovante */}
-        {clientData?.driveFolderId ? (
+        {(clientData?.driveFolderId||user?.driveFolderId) ? (
           <div style={{marginBottom:14}}>
             <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Comprovante</div>
             <div style={{padding:16,background:"rgba(255,255,255,0.04)",border:`2px dashed ${receiptFile?"rgba(16,185,129,0.4)":T.border}`,borderRadius:10,textAlign:"center"}}>
@@ -1946,7 +1947,7 @@ function Clients({clients,setClients,mobile}) {
                     `Equipe Zion Solutions`,
       });
 
-      setClients(p=>[...p,{uid, id:uid, clientId, name:form.name, email:form.email, role:"client", caseType:form.caseType, sponsor:form.sponsor, priorityDate:form.priorityDate, plan}]);
+      setClients(p=>[...p,{uid, id:uid, clientId, name:form.name, email:form.email, role:"client", caseType:form.caseType, sponsor:form.sponsor, priorityDate:form.priorityDate, plan, driveFolderId}]);
       setMsg({type:"success", text:`✓ ${form.name} cadastrado! E-mail de boas-vindas enviado para ${form.email}. Senha padrão: ${defaultPassword}`});
       setOpen(false); setForm(EMPTY);
     } catch(e) {
@@ -3514,7 +3515,9 @@ function App() {
       // Admin/Developer: escuta todos os dados em tempo real
       unsubs.push(dbListen("messages",  setMessages));
       unsubs.push(dbListen("payments",  setPayments));
-      dbList("users", _db.where("role","==","client")).then(setClients);
+      // Use real-time listener for clients to get driveFolderId updates
+      const unsubClients = firestoreListen("users", setClients, _db.where("role","==","client"));
+      unsubs.push(unsubClients);
     } else {
       // Cliente: escuta apenas seus próprios dados
       const cid = user.clientId || user.uid;
