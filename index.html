@@ -1051,6 +1051,8 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
 
   const myPay    = payments.filter(p=>p.clientId===user.clientId);
   const clientData = clients.find(c=>(c.clientId||c.uid)===user.clientId||c.uid===user.uid) || user;
+  // Get driveFolderId from multiple sources
+  const driveFolderId = clientData?.driveFolderId || user?.driveFolderId || null;
 
   // Valores do plano — prioriza clientData do Firestore, depois user.plan
   const hasPlan = !!(clientData?.plan?.total || user?.plan?.total);
@@ -1107,10 +1109,9 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
     try {
       let finalReceiptUrl = receiptUrl||null;
       // Upload para Google Drive se cliente tem pasta e arquivo selecionado
-      const folderIdToUse = clientData?.driveFolderId || user?.driveFolderId;
-      if (receiptFile && folderIdToUse) {
+      if (receiptFile && driveFolderId) {
         try {
-          const uploaded = await driveUploadFile(folderIdToUse, "💳 Comprovantes de Pagamento", receiptFile);
+          const uploaded = await driveUploadFile(driveFolderId, "💳 Comprovantes de Pagamento", receiptFile);
           finalReceiptUrl = uploaded.viewLink;
         } catch(e) {
           console.warn("Drive upload failed:", e.message);
@@ -1291,7 +1292,7 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
         )}
 
         {/* Link do comprovante */}
-        {(clientData?.driveFolderId||user?.driveFolderId) ? (
+        {driveFolderId ? (
           <div style={{marginBottom:14}}>
             <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Comprovante</div>
             <div style={{padding:16,background:"rgba(255,255,255,0.04)",border:`2px dashed ${receiptFile?"rgba(16,185,129,0.4)":T.border}`,borderRadius:10,textAlign:"center"}}>
@@ -1499,7 +1500,7 @@ function Cases({user,caseStatus,updateCaseStatus,clients,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function DocumentsSection({user, clients, clientInfo, isAdmin}) {
   const client = isAdmin ? clientInfo : (clients?.find(c=>(c.clientId||c.uid)===(user.clientId||user.uid)) || user);
-  const folderId = client?.driveFolderId;
+  const folderId = client?.driveFolderId || user?.driveFolderId || null;
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
