@@ -1105,16 +1105,26 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
     if(!amount||amount<=0) return;
     setUploading(true);
     try {
+      let finalReceiptUrl = receiptUrl||null;
+      // Upload para Google Drive se cliente tem pasta e arquivo selecionado
+      if (receiptFile && clientData?.driveFolderId) {
+        try {
+          const uploaded = await driveUploadFile(clientData.driveFolderId, "💳 Comprovantes de Pagamento", receiptFile);
+          finalReceiptUrl = uploaded.viewLink;
+        } catch(e) {
+          console.warn("Drive upload failed:", e.message);
+        }
+      }
       await addPayment({
         clientId:    user.clientId||user.uid,
         description: selectedOption.label,
         amount,
         date:        new Date().toISOString().split("T")[0],
         status:      "pending_review",
-        receiptUrl:  receiptUrl||null,
+        receiptUrl:  finalReceiptUrl,
         planOptionId: selectedOption.id,
       });
-      setOpen(false); setSelectedOption(null); setReceiptUrl(""); setCustomAmount("");
+      setOpen(false); setSelectedOption(null); setReceiptUrl(""); setCustomAmount(""); setReceiptFile(null);
     } finally { setUploading(false); }
   };
 
