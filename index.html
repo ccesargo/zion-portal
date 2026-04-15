@@ -84,6 +84,54 @@ async function uploadReceipt(file, clientId) {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GOOGLE DRIVE HELPERS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+async function driveCreateFolder(clientName, clientId) {
+  const res = await fetch("/.netlify/functions/create-folder", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientName, clientId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Erro ao criar pasta no Drive");
+  return data; // { folderId, created }
+}
+
+async function driveUploadFile(folderId, subfolder, file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = reader.result.split(",")[1];
+        const res = await fetch("/.netlify/functions/upload-file", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            folderId,
+            subfolder,
+            fileName: file.name,
+            mimeType: file.type,
+            fileBase64: base64,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erro no upload");
+        resolve(data); // { fileId, fileName, viewLink }
+      } catch(e) { reject(e); }
+    };
+    reader.onerror = () => reject(new Error("Erro ao ler arquivo"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function driveListFiles(folderId) {
+  const res = await fetch(`/.netlify/functions/list-files?folderId=${folderId}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Erro ao listar arquivos");
+  return data.files;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // SISTEMA DE LOGS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const DEVELOPER = {
@@ -94,8 +142,21 @@ const DEVELOPER = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // VERSÃO E CHANGELOG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const APP_VERSION = "1.8.0";
+const APP_VERSION = "1.9.0";
 const CHANGELOG = [
+  {
+    version: "1.9.0",
+    date: "15/04/2026",
+    changes: [
+      "Integração com Google Drive: pasta criada automaticamente para cada novo cliente",
+      "4 subpastas organizadas: Processo, Documentos Pessoais, Comprovantes e Contratos",
+      "Upload de documentos diretamente no portal com seleção de pasta de destino",
+      "Comprovantes de pagamento enviados automaticamente para o Drive do cliente",
+      "Checklist de documentos por etapa: PERM, I-140 e I-485",
+      "Admin marca itens como entregues; cliente acompanha o status em tempo real",
+      "Listagem de arquivos do Drive com link direto para visualização",
+    ]
+  },
   {
     version: "1.8.0",
     date: "14/04/2026",
@@ -986,6 +1047,7 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
   const [uploading,setUploading] = useState(false);
   const [selectedOption,setSelectedOption] = useState(null); // opção selecionada do plano
   const [receiptUrl,setReceiptUrl] = useState("");
+  const [receiptFile,setReceiptFile] = useState(null);
 
   const myPay    = payments.filter(p=>p.clientId===user.clientId);
   const clientData = clients.find(c=>(c.clientId||c.uid)===user.clientId||c.uid===user.uid) || user;
@@ -1218,7 +1280,20 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
         )}
 
         {/* Link do comprovante */}
-        <FInp label="Link do comprovante (Google Drive, iCloud, etc.)" value={receiptUrl} onChange={e=>setReceiptUrl(e.target.value)} placeholder="https://drive.google.com/..."/>
+        {clientData?.driveFolderId ? (
+          <div style={{marginBottom:14}}>
+            <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Comprovante</div>
+            <div style={{padding:16,background:"rgba(255,255,255,0.04)",border:`2px dashed ${receiptFile?"rgba(16,185,129,0.4)":T.border}`,borderRadius:10,textAlign:"center"}}>
+              <input type="file" id="receipt-file" accept="image/*,application/pdf" onChange={e=>{setReceiptFile(e.target.files[0]);setReceiptUrl("");}} style={{display:"none"}}/>
+              <label htmlFor="receipt-file" style={{cursor:"pointer",color:receiptFile?T.green:T.faint,fontSize:13}}>
+                {receiptFile ? `✓ ${receiptFile.name}` : "📎 Clique para selecionar arquivo"}
+              </label>
+              {receiptFile&&<div style={{color:T.faint,fontSize:11,marginTop:4}}>Será salvo no seu Google Drive automaticamente</div>}
+            </div>
+          </div>
+        ) : (
+          <FInp label="Link do comprovante (Google Drive, iCloud, etc.)" value={receiptUrl} onChange={e=>setReceiptUrl(e.target.value)} placeholder="https://drive.google.com/..."/>
+        )}
         <div style={{padding:"10px 14px",background:"rgba(96,165,250,0.07)",border:`1px solid rgba(96,165,250,0.2)`,borderRadius:10,marginBottom:16,fontSize:12,color:T.dim,lineHeight:1.6}}>
           💡 <strong style={{color:T.blue}}>Google Drive</strong> → Compartilhar → Copiar link &nbsp;|&nbsp;
           <strong style={{color:T.blue}}>iCloud</strong> → Compartilhar → Copiar link
@@ -1400,7 +1475,239 @@ function Cases({user,caseStatus,updateCaseStatus,clients,mobile}) {
           </div>
         </Card>
       )}
+      {/* Checklist de documentos */}
+      <ChecklistSection user={user} clients={clients} isAdmin={isAdmin} clientInfo={clientInfo}/>
+      {/* Documentos no Drive */}
+      <DocumentsSection user={user} clients={clients} clientInfo={clientInfo} isAdmin={isAdmin}/>
     </div>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DOCUMENTS SECTION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function DocumentsSection({user, clients, clientInfo, isAdmin}) {
+  const client = isAdmin ? clientInfo : (clients?.find(c=>(c.clientId||c.uid)===(user.clientId||user.uid)) || user);
+  const folderId = client?.driveFolderId;
+  const [files, setFiles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [subfolder, setSubfolder] = useState("🪪 Documentos Pessoais");
+  const [uploadFile, setUploadFile] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [open, setOpen] = useState(false);
+
+  const SUBFOLDERS = ["📋 Processo","🪪 Documentos Pessoais","💳 Comprovantes de Pagamento","📄 Contratos"];
+
+  const loadFiles = async () => {
+    if (!folderId) return;
+    setLoading(true);
+    try {
+      const list = await driveListFiles(folderId);
+      setFiles(list.filter(f=>f.mimeType!=="application/vnd.google-apps.folder"));
+    } catch(e) { setMsg({type:"error",text:"Erro ao carregar arquivos: "+e.message}); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(()=>{ if(folderId) loadFiles(); },[folderId]);
+
+  const doUpload = async () => {
+    if (!uploadFile||!folderId) return;
+    setUploading(true); setMsg(null);
+    try {
+      await driveUploadFile(folderId, subfolder, uploadFile);
+      setMsg({type:"success",text:`✓ ${uploadFile.name} enviado para ${subfolder}`});
+      setUploadFile(null); setOpen(false);
+      await loadFiles();
+    } catch(e) { setMsg({type:"error",text:"Erro: "+e.message}); }
+    finally { setUploading(false); }
+  };
+
+  const fmtSize = b => b ? (b>1048576 ? (b/1048576).toFixed(1)+"MB" : (b/1024).toFixed(0)+"KB") : "—";
+  const fileIcon = mime => mime?.includes("pdf")?"📄":mime?.includes("image")?"🖼":mime?.includes("word")?"📝":"📎";
+
+  if (!folderId) return (
+    <Card style={{borderColor:"rgba(245,158,11,0.25)",background:"rgba(245,158,11,0.05)"}}>
+      <div style={{color:T.amber,fontWeight:600,marginBottom:6}}>📁 Google Drive não configurado</div>
+      <div style={{color:T.dim,fontSize:13}}>{isAdmin?"Recadastre o cliente para criar a pasta automaticamente no Drive.":"Aguarde a Zion Solutions configurar seu espaço de documentos."}</div>
+    </Card>
+  );
+
+  return (
+    <Card>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div>
+          <h4 style={{color:T.gold,margin:0,fontSize:15}}>📁 Documentos no Google Drive</h4>
+          <a href={`https://drive.google.com/drive/folders/${folderId}`} target="_blank" rel="noreferrer"
+            style={{color:T.blue,fontSize:11,textDecoration:"none",marginTop:2,display:"inline-block"}}>
+            🔗 Abrir pasta no Drive
+          </a>
+        </div>
+        <Btn onClick={()=>setOpen(true)} style={{padding:"7px 14px",fontSize:12}}>+ Enviar arquivo</Btn>
+      </div>
+
+      {msg&&<div style={{padding:"10px 14px",background:msg.type==="success"?"rgba(16,185,129,0.1)":"rgba(239,68,68,0.1)",border:`1px solid ${msg.type==="success"?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`,borderRadius:10,color:msg.type==="success"?T.green:T.red,fontSize:13,marginBottom:14,display:"flex",justifyContent:"space-between"}}>
+        {msg.text}<button onClick={()=>setMsg(null)} style={{background:"none",border:"none",color:"inherit",cursor:"pointer"}}>×</button>
+      </div>}
+
+      {loading ? <div style={{color:T.faint,textAlign:"center",padding:20,fontSize:13}}>Carregando arquivos…</div>
+      : files.length===0 ? (
+        <div style={{textAlign:"center",padding:24,color:T.faint,fontSize:13}}>
+          <div style={{fontSize:30,marginBottom:8}}>📂</div>
+          Nenhum arquivo enviado ainda.<br/>
+          <span style={{fontSize:12}}>Clique em "+ Enviar arquivo" para começar.</span>
+        </div>
+      ) : (
+        <div style={{display:"flex",flexDirection:"column",gap:0}}>
+          {files.map(f=>(
+            <div key={f.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${T.border}`}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
+                <span style={{fontSize:20,flexShrink:0}}>{fileIcon(f.mimeType)}</span>
+                <div style={{minWidth:0}}>
+                  <div style={{color:T.text,fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</div>
+                  <div style={{color:T.faint,fontSize:11,marginTop:1}}>{fmtSize(Number(f.size))} · {new Date(f.createdTime).toLocaleDateString("pt-BR")}</div>
+                </div>
+              </div>
+              <a href={f.webViewLink} target="_blank" rel="noreferrer"
+                style={{color:T.blue,fontSize:12,textDecoration:"none",flexShrink:0,marginLeft:10,padding:"5px 10px",background:"rgba(96,165,250,0.1)",borderRadius:8}}>
+                Abrir 🔗
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Overlay open={open} onClose={()=>{setOpen(false);setUploadFile(null);}} title="Enviar Documento" mobile={false}>
+        <div style={{marginBottom:14}}>
+          <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Pasta de destino</div>
+          <div style={{display:"flex",flexDirection:"column",gap:6}}>
+            {SUBFOLDERS.map(sf=>(
+              <button key={sf} onClick={()=>setSubfolder(sf)} style={{padding:"10px 14px",background:subfolder===sf?"rgba(232,200,122,0.12)":T.surface,border:`1px solid ${subfolder===sf?"rgba(232,200,122,0.4)":T.border}`,borderRadius:10,color:subfolder===sf?T.gold:T.dim,fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",textAlign:"left"}}>
+                {sf}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{marginBottom:20}}>
+          <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Arquivo</div>
+          <div style={{padding:20,background:"rgba(255,255,255,0.04)",border:`2px dashed ${uploadFile?"rgba(16,185,129,0.4)":T.border}`,borderRadius:10,textAlign:"center"}}>
+            <input type="file" id="doc-upload" onChange={e=>setUploadFile(e.target.files[0])} style={{display:"none"}}/>
+            <label htmlFor="doc-upload" style={{cursor:"pointer",color:uploadFile?T.green:T.faint,fontSize:13}}>
+              {uploadFile?`✓ ${uploadFile.name}`:"📎 Clique para selecionar arquivo"}
+            </label>
+            {uploadFile&&<div style={{color:T.faint,fontSize:11,marginTop:4}}>Será salvo em: {subfolder}</div>}
+          </div>
+        </div>
+        <div style={{display:"flex",gap:10}}>
+          <Btn onClick={doUpload} disabled={!uploadFile||uploading} style={{flex:1}}>{uploading?"Enviando…":"Enviar para o Drive"}</Btn>
+          <Btn variant="ghost" onClick={()=>{setOpen(false);setUploadFile(null);}} style={{flex:1}}>Cancelar</Btn>
+        </div>
+      </Overlay>
+    </Card>
+  );
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DOCUMENT CHECKLIST
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const CHECKLIST_ITEMS = {
+  perm: [
+    { id:"perm_job_offer",     label:"Carta de oferta de emprego do sponsor" },
+    { id:"perm_resume",        label:"Currículo atualizado (em inglês)" },
+    { id:"perm_diploma",       label:"Diploma ou certificado de escolaridade" },
+    { id:"perm_passport_copy", label:"Cópia do passaporte" },
+    { id:"perm_i94",           label:"Cópia do I-94" },
+  ],
+  i140: [
+    { id:"i140_perm_approval", label:"Cópia da aprovação do PERM" },
+    { id:"i140_passport",      label:"Passaporte válido" },
+    { id:"i140_birth_cert",    label:"Certidão de nascimento (traduzida)" },
+    { id:"i140_marriage_cert", label:"Certidão de casamento (se aplicável)" },
+    { id:"i140_photos",        label:"2 fotos 2x2 recentes" },
+  ],
+  i485: [
+    { id:"i485_medical",       label:"Exame médico (Formulário I-693)" },
+    { id:"i485_tax_returns",   label:"Declarações de imposto de renda (3 anos)" },
+    { id:"i485_employment_letter", label:"Carta de emprego atual" },
+    { id:"i485_bank_statements",   label:"Extratos bancários (3 meses)" },
+    { id:"i485_sponsor_letter",    label:"Carta do sponsor confirmando emprego" },
+    { id:"i485_photos",        label:"2 fotos 2x2 recentes" },
+  ],
+};
+
+function ChecklistSection({user, clients, isAdmin, clientInfo}) {
+  const client = isAdmin ? clientInfo : (clients?.find(c=>(c.clientId||c.uid)===(user.clientId||user.uid)) || user);
+  const clientId = client?.clientId || client?.uid || user.clientId;
+  const [checklist, setChecklist] = useState({});
+  const [saving, setSaving] = useState(false);
+
+  useEffect(()=>{
+    if (!clientId) return;
+    dbGet("checklists", clientId).then(data=>{ if(data) setChecklist(data.items||{}); });
+  },[clientId]);
+
+  const toggle = async (itemId) => {
+    const newVal = !checklist[itemId];
+    const updated = {...checklist, [itemId]: newVal};
+    setChecklist(updated);
+    setSaving(true);
+    try { await dbSet("checklists", clientId, { items: updated, updatedAt: new Date().toISOString() }); }
+    finally { setSaving(false); }
+  };
+
+  const stageItems = [
+    { stage:"PERM", key:"perm", color:T.amber },
+    { stage:"I-140", key:"i140", color:T.blue },
+    { stage:"I-485 (Ajuste de Status)", key:"i485", color:T.green },
+  ];
+
+  const totalItems = Object.values(CHECKLIST_ITEMS).flat().length;
+  const doneItems  = Object.values(checklist).filter(Boolean).length;
+  const pct = Math.round((doneItems/totalItems)*100);
+
+  return (
+    <Card>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <h4 style={{color:T.gold,margin:0,fontSize:15}}>✅ Checklist de Documentos</h4>
+        <div style={{textAlign:"right"}}>
+          <div style={{color:T.text,fontSize:13,fontWeight:700}}>{doneItems}/{totalItems}</div>
+          <div style={{color:T.faint,fontSize:11}}>{pct}% completo</div>
+        </div>
+      </div>
+      <ProgBar value={doneItems} total={totalItems} color={pct===100?T.green:T.gold} h={6}/>
+      <div style={{marginTop:20,display:"flex",flexDirection:"column",gap:16}}>
+        {stageItems.map(({stage,key,color})=>{
+          const items = CHECKLIST_ITEMS[key];
+          const done  = items.filter(i=>checklist[i.id]).length;
+          return (
+            <div key={key}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <span style={{color,fontWeight:600,fontSize:13}}>{stage}</span>
+                <span style={{color:T.faint,fontSize:12}}>{done}/{items.length}</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {items.map(item=>{
+                  const done = !!checklist[item.id];
+                  return (
+                    <div key={item.id}
+                      onClick={()=>isAdmin&&toggle(item.id)}
+                      style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:done?"rgba(16,185,129,0.07)":"rgba(255,255,255,0.04)",border:`1px solid ${done?"rgba(16,185,129,0.2)":T.border}`,borderRadius:10,cursor:isAdmin?"pointer":"default",transition:"all 0.15s"}}>
+                      <div style={{width:20,height:20,borderRadius:6,border:`2px solid ${done?T.green:"rgba(255,255,255,0.2)"}`,background:done?T.green:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:12,color:"#fff"}}>
+                        {done&&"✓"}
+                      </div>
+                      <span style={{color:done?T.dim:T.text,fontSize:13,textDecoration:done?"line-through":"none"}}>{item.label}</span>
+                      {!isAdmin&&done&&<span style={{color:T.green,fontSize:11,marginLeft:"auto",flexShrink:0}}>✓ Entregue</span>}
+                      {!isAdmin&&!done&&<span style={{color:T.amber,fontSize:11,marginLeft:"auto",flexShrink:0}}>Pendente</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {isAdmin&&<div style={{color:T.faint,fontSize:11,marginTop:12,textAlign:"center"}}>Clique nos itens para marcar como entregue</div>}
+    </Card>
   );
 }
 
@@ -1587,7 +1894,18 @@ function Clients({clients,setClients,mobile}) {
       // 3. Criar caseStatus padrão
       await dbUpdate("caseStatus", clientId, { stages: DEFAULT_CASE });
 
-      // 4. Enviar e-mail de boas-vindas com resumo do processo e plano
+      // 4. Criar pasta no Google Drive
+      let driveFolderId = null;
+      try {
+        const driveResult = await driveCreateFolder(form.name, clientId);
+        driveFolderId = driveResult.folderId;
+        // Salva o folderId no perfil do cliente
+        await dbUpdate("users", uid, { driveFolderId });
+      } catch(driveErr) {
+        console.warn("Drive folder creation failed (non-blocking):", driveErr.message);
+      }
+
+      // 5. Enviar e-mail de boas-vindas com resumo do processo e plano
       await sendEmail({
         to_email:   form.email,
         to_name:    form.name.split(" ")[0],
@@ -3308,7 +3626,6 @@ function App() {
   };
 
   const handleAddClient = async (clientData) => {
-    // Apenas salva no Firestore — a conta de Auth é criada no Firebase Console
     const id = await dbAdd("clients", clientData);
     setClients(p=>[...p, { id, ...clientData }]);
   };

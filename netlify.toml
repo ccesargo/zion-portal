@@ -1,13 +1,19 @@
 [build]
   publish = "dist"
-  command = "node build.js"
+  command = "node build.js && cd netlify/functions && npm install"
+
 [build.environment]
   SECRETS_SCAN_SMART_DETECTION_ENABLED = "false"
+
+[functions]
+  directory = "netlify/functions"
+
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "SAMEORIGIN"
     X-Content-Type-Options = "nosniff"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
