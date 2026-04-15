@@ -1897,12 +1897,16 @@ function Clients({clients,setClients,mobile}) {
       // 4. Criar pasta no Google Drive
       let driveFolderId = null;
       try {
+        setMsg({type:"success", text:"Criando pasta no Google Drive…"});
         const driveResult = await driveCreateFolder(form.name, clientId);
         driveFolderId = driveResult.folderId;
-        // Salva o folderId no perfil do cliente
         await dbUpdate("users", uid, { driveFolderId });
+        console.log("Drive folder created:", driveFolderId);
       } catch(driveErr) {
-        console.warn("Drive folder creation failed (non-blocking):", driveErr.message);
+        console.error("Drive folder creation failed:", driveErr);
+        setMsg({type:"error", text:"⚠️ Erro ao criar pasta no Drive: " + driveErr.message + " — Cliente cadastrado mas sem pasta no Drive."});
+        // Espera 3s para mostrar o erro antes de fechar
+        await new Promise(r => setTimeout(r, 3000));
       }
 
       // 5. Enviar e-mail de boas-vindas com resumo do processo e plano
