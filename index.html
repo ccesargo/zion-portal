@@ -1050,16 +1050,14 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
   const [receiptFile,setReceiptFile] = useState(null);
   const [driveFolderId, setDriveFolderId] = useState(user?.driveFolderId || null);
 
-  // Busca driveFolderId direto no Firestore ao abrir o modal
-  const loadDriveFolderId = async () => {
-    if (driveFolderId) return; // já tem, não precisa buscar
-    try {
-      const uid = user.uid || user.id;
-      if (!uid) return;
-      const doc = await dbGet("users", uid);
+  // Busca driveFolderId do Firestore ao montar o componente
+  useEffect(()=>{
+    const uid = user.uid || user.id;
+    if (!uid) return;
+    dbGet("users", uid).then(doc=>{
       if (doc?.driveFolderId) setDriveFolderId(doc.driveFolderId);
-    } catch(e) { console.warn("Could not load driveFolderId:", e.message); }
-  };
+    }).catch(()=>{});
+  }, [user.uid]);
 
   const myPay    = payments.filter(p=>p.clientId===user.clientId);
   const clientData = clients.find(c=>(c.clientId||c.uid)===user.clientId||c.uid===user.uid) || user;
@@ -1193,7 +1191,7 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
       <Card>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
           <h3 style={{color:T.gold,margin:0,fontSize:15}}>Plano de Pagamento</h3>
-          <Btn onClick={()=>{setOpen(true);loadDriveFolderId();}} style={{padding:"7px 16px",fontSize:13}}>+ Enviar Comprovante</Btn>
+          <Btn onClick={()=>setOpen(true)} style={{padding:"7px 16px",fontSize:13}}>+ Enviar Comprovante</Btn>
         </div>
         {stages.map((item,i)=>(
           <div key={i} style={{padding:"14px 0",borderBottom:i<stages.length-1?`1px solid ${T.border}`:"none"}}>
