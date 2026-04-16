@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260416023543 -->
+  <!-- build:20260416024131 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -1314,23 +1314,21 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
           </div>
         )}
 
-        {/* Link do comprovante */}
-        {driveFolderId ? (
-          <div style={{marginBottom:14}}>
-            <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Comprovante</div>
-            <div style={{padding:16,background:"rgba(255,255,255,0.04)",border:`2px dashed ${receiptFile?"rgba(16,185,129,0.4)":T.border}`,borderRadius:10,textAlign:"center"}}>
-              <input type="file" id="receipt-file" accept="image/*,application/pdf" onChange={e=>{setReceiptFile(e.target.files[0]);setReceiptUrl("");}} style={{display:"none"}}/>
-              <label htmlFor="receipt-file" style={{cursor:"pointer",color:receiptFile?T.green:T.faint,fontSize:13}}>
-                {receiptFile ? `✓ ${receiptFile.name}` : "📎 Clique para selecionar arquivo"}
-              </label>
-              {receiptFile&&<div style={{color:T.faint,fontSize:11,marginTop:4}}>Será salvo no seu Google Drive automaticamente</div>}
+        {/* Comprovante */}
+        <div style={{marginBottom:14}}>
+          <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Comprovante</div>
+          {receiptFile ? (
+            <div style={{padding:"12px 14px",background:"rgba(16,185,129,0.08)",border:"1px solid rgba(16,185,129,0.3)",borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <span style={{color:T.green,fontSize:13}}>✓ {receiptFile.name}</span>
+              <button onClick={()=>setReceiptFile(null)} style={{background:"none",border:"none",color:T.faint,cursor:"pointer",fontSize:20,padding:0}}>×</button>
             </div>
+          ) : (
+            <input type="file" accept="image/*,application/pdf" onChange={e=>{if(e.target.files&&e.target.files[0]){setReceiptFile(e.target.files[0]);setReceiptUrl("");}}} style={{display:"block",width:"100%",padding:"12px 14px",background:"rgba(255,255,255,0.04)",border:`1px solid ${T.border}`,borderRadius:10,color:T.dim,fontSize:13,cursor:"pointer",boxSizing:"border-box"}}/>
+          )}
+          <div style={{marginTop:8}}>
+            <FInp label="Ou cole um link" value={receiptUrl} onChange={e=>{setReceiptUrl(e.target.value);setReceiptFile(null);}} placeholder="https://drive.google.com/..."/>
           </div>
-        ) : (
-          <FInp label="Link do comprovante (Google Drive, iCloud, etc.)" value={receiptUrl} onChange={e=>setReceiptUrl(e.target.value)} placeholder="https://drive.google.com/..."/>
-        )}
-        <div style={{padding:"10px 14px",background:"rgba(96,165,250,0.07)",border:`1px solid rgba(96,165,250,0.2)`,borderRadius:10,marginBottom:16,fontSize:12,color:T.dim,lineHeight:1.6}}>
-          💡 <strong style={{color:T.blue}}>Google Drive</strong> → Compartilhar → Copiar link &nbsp;|&nbsp;
+        </div>
           <strong style={{color:T.blue}}>iCloud</strong> → Compartilhar → Copiar link
         </div>
         <div style={{display:"flex",gap:10}}>
