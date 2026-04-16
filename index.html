@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260416032437 -->
+  <!-- build:20260416171933 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -440,25 +440,25 @@ function ProgRow({label,value,total,color}) {
 }
 function FInp({label,value,onChange,type="text",placeholder="",style={}}) {
   return (
-    <div style={{marginBottom:14}}>
-      {label&&<div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>{label}</div>}
+    <div style={{marginBottom:16}}>
+      {label&&<div style={{color:"rgba(255,255,255,0.7)",fontSize:12,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:7,fontWeight:600}}>{label}</div>}
       <input type={type} value={value} onChange={onChange} placeholder={placeholder}
-        style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,boxSizing:"border-box",fontFamily:"Georgia,serif",outline:"none",...style}}/>
+        style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,boxSizing:"border-box",fontFamily:"Georgia,serif",outline:"none",transition:"border-color 0.2s",...style}}/>
     </div>
   );
 }
 
 // ── Modal (desktop) ───────────────────────────────────────────────────────────
-function Modal({title,children,onClose,width=480}) {
+function Modal({title,children,onClose,width=560}) {
   return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
-      <Card style={{width,maxWidth:"100%",maxHeight:"85vh",overflowY:"auto"}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
-          <h3 style={{color:T.gold,margin:0,fontSize:18}}>{title}</h3>
-          <button onClick={onClose} style={{background:"none",border:"none",color:T.dim,fontSize:24,cursor:"pointer",lineHeight:1}}>×</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:20,backdropFilter:"blur(4px)"}}>
+      <div style={{width,maxWidth:"100%",maxHeight:"90vh",overflowY:"auto",background:"#0F1829",border:"1px solid rgba(255,255,255,0.12)",borderRadius:20,boxShadow:"0 25px 60px rgba(0,0,0,0.6)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"22px 24px 18px",borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+          <h3 style={{color:T.gold,margin:0,fontSize:20,fontWeight:700}}>{title}</h3>
+          <button onClick={onClose} style={{background:"rgba(255,255,255,0.08)",border:"none",color:"rgba(255,255,255,0.6)",fontSize:20,cursor:"pointer",lineHeight:1,width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center"}}>×</button>
         </div>
-        {children}
-      </Card>
+        <div style={{padding:"20px 24px 24px"}}>{children}</div>
+      </div>
     </div>
   );
 }
@@ -469,7 +469,7 @@ function Sheet({open,onClose,title,children}) {
   return (
     <div style={{position:"fixed",inset:0,zIndex:300}}>
       <div onClick={onClose} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.65)"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#0F1626",borderRadius:"22px 22px 0 0",maxHeight:"92vh",overflowY:"auto"}}>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,background:"#0F1829",borderRadius:"22px 22px 0 0",border:"1px solid rgba(255,255,255,0.1)",borderBottom:"none",maxHeight:"92vh",overflowY:"auto"}}>
         <div style={{display:"flex",justifyContent:"center",padding:"12px 0 4px"}}><div style={{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)"}}/></div>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 20px 16px"}}>
           <h3 style={{color:T.gold,margin:0,fontSize:18}}>{title}</h3>
@@ -866,7 +866,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
                 {clients.map(c=><option key={c.uid} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name?.split(" ").slice(0,2).join(" ")}</option>)}
               </select>
             </div>
-            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Origem</div><select value={form.source} onChange={e=>setForm(p=>({...p,source:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}><option value="zion" style={{background:"#0D1117"}}>Zion Solutions</option><option value="sponsor" style={{background:"#0D1117"}}>Sponsor</option></select></div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Origem</div><select value={form.source} onChange={e=>setForm(p=>({...p,source:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}><option value="zion" style={{background:"#0D1117"}}>Zion Solutions</option><option value="sponsor" style={{background:"#0D1117"}}>Sponsor</option></select></div>
           </>
         )}
         <FInp label="Assunto" value={form.subject} onChange={e=>setForm(p=>({...p,subject:e.target.value}))}/>
@@ -1829,7 +1829,7 @@ function DependentsTab({form, setForm}) {
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             <FInp label="Nome completo" value={dep.name} onChange={e=>upd(i,"name",e.target.value)} placeholder="Nome do dependente"/>
-            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Parentesco</div><select value={dep.relation} onChange={e=>upd(i,"relation",e.target.value)} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{RELATIONS.map(r=><option key={r} value={r} style={{background:"#0D1117"}}>{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}</select></div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Parentesco</div><select value={dep.relation} onChange={e=>upd(i,"relation",e.target.value)} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>{RELATIONS.map(r=><option key={r} value={r} style={{background:"#0D1117"}}>{r.charAt(0).toUpperCase()+r.slice(1)}</option>)}</select></div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
             <FInp label="Data de nascimento" type="date" value={dep.dob} onChange={e=>upd(i,"dob",e.target.value)}/>
@@ -1837,7 +1837,7 @@ function DependentsTab({form, setForm}) {
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
             <FInp label="Validade Passaporte" type="date" value={dep.passportExp} onChange={e=>upd(i,"passportExp",e.target.value)}/>
-            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Visto</div><select value={dep.visaType} onChange={e=>upd(i,"visaType",e.target.value)} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{"Selecione,B-1/B-2,F-2,H-4,TD,Outro".split(",").map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v}</option>)}</select></div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Visto</div><select value={dep.visaType} onChange={e=>upd(i,"visaType",e.target.value)} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>{"Selecione,B-1/B-2,F-2,H-4,TD,Outro".split(",").map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v}</option>)}</select></div>
             <FInp label="Validade Visto" type="date" value={dep.visaExp} onChange={e=>upd(i,"visaExp",e.target.value)}/>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:"rgba(232,200,122,0.07)",borderRadius:10,border:"1px solid rgba(232,200,122,0.15)"}}>
@@ -2192,7 +2192,7 @@ function Clients({clients,setClients,mobile}) {
             <FInp label="E-mail *" type="email" value={form.email} onChange={e=>setForm(p=>({...p,email:e.target.value}))} placeholder="email@cliente.com"/>
             {form.name&&<div style={{padding:"10px 14px",background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.2)",borderRadius:10,marginBottom:14,fontSize:13,color:T.dim}}>🔑 Senha padrão: <strong style={{color:T.text,fontFamily:"monospace"}}>{form.name.trim().split(" ")[0].toLowerCase()}</strong><div style={{fontSize:11,marginTop:4,color:T.faint}}>Cliente pode alterar via "Esqueci minha senha"</div></div>}
             <div style={{padding:"8px 12px",background:"rgba(232,200,122,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.gold,fontSize:12,fontWeight:600}}>📋 Processo Imigratório</div>
-            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div><select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}</select></div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div><select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>{TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}</select></div>
             <FInp label="Sponsor / Employer" value={form.sponsor} onChange={e=>setForm(p=>({...p,sponsor:e.target.value}))} placeholder="Empresa patrocinadora"/>
             <FInp label="Priority Date" type="date" value={form.priorityDate} onChange={e=>setForm(p=>({...p,priorityDate:e.target.value}))}/>
             <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🔢 Protocolos <span style={{color:T.faint,fontWeight:400}}>(opcional)</span></div>
@@ -2221,7 +2221,7 @@ function Clients({clients,setClients,mobile}) {
               <FInp label="SSN (EUA, opcional)" value={form.ssn} onChange={e=>setForm(p=>({...p,ssn:e.target.value}))} placeholder="XXX-XX-XXXX"/>
             </div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-              <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Estado Civil</div><select value={form.maritalStatus} onChange={e=>setForm(p=>({...p,maritalStatus:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{["solteiro","casado","divorciado","viúvo","união estável"].map(s=><option key={s} value={s} style={{background:"#0D1117"}}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}</select></div>
+              <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Estado Civil</div><select value={form.maritalStatus} onChange={e=>setForm(p=>({...p,maritalStatus:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>{["solteiro","casado","divorciado","viúvo","união estável"].map(s=><option key={s} value={s} style={{background:"#0D1117"}}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}</select></div>
               <FInp label="Profissão / Ocupação" value={form.occupation} onChange={e=>setForm(p=>({...p,occupation:e.target.value}))} placeholder="Ex: Cook, Caregiver"/>
             </div>
             <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.blue,fontSize:12,fontWeight:600}}>🏠 Endereço nos EUA</div>
@@ -2247,7 +2247,7 @@ function Clients({clients,setClients,mobile}) {
             )}
             <div style={{padding:"8px 12px",background:"rgba(139,92,246,0.1)",borderRadius:10,margin:"6px 0 14px",color:"#A78BFA",fontSize:12,fontWeight:600}}>🇺🇸 Visto Atual</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
-              <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Visto</div><select value={form.visaType} onChange={e=>setForm(p=>({...p,visaType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>{"Selecione,B-1/B-2,F-1,J-1,H-1B,H-4,L-1,O-1,TN,E-2,EB-1,EB-2,EB-3,Sem visto (EWI),Outro".split(",").map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v}</option>)}</select></div>
+              <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Visto</div><select value={form.visaType} onChange={e=>setForm(p=>({...p,visaType:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>{"Selecione,B-1/B-2,F-1,J-1,H-1B,H-4,L-1,O-1,TN,E-2,EB-1,EB-2,EB-3,Sem visto (EWI),Outro".split(",").map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v}</option>)}</select></div>
               <FInp label="Número do visto" value={form.visaNum} onChange={e=>setForm(p=>({...p,visaNum:e.target.value}))} placeholder="V0000000"/>
               <FInp label="Validade" type="date" value={form.visaExp} onChange={e=>setForm(p=>({...p,visaExp:e.target.value}))}/>
             </div>
@@ -2283,7 +2283,7 @@ function Clients({clients,setClients,mobile}) {
             </div>
             <FInp label="Salário por hora ($)" value={form.salary} onChange={e=>setForm(p=>({...p,salary:e.target.value}))} placeholder="Ex: 22.00" type="number"/>
             <div style={{padding:"8px 12px",background:"rgba(16,185,129,0.08)",borderRadius:10,margin:"6px 0 14px",color:T.green,fontSize:12,fontWeight:600}}>📋 Histórico de Empregos nos EUA</div>
-            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Empregos anteriores (opcional)</div><textarea value={form.prevEmployers} onChange={e=>setForm(p=>({...p,prevEmployers:e.target.value}))} rows={4} placeholder="Ex:&#10;Edgstone Hospitality — Cook — Jan 2023 a Dez 2023&#10;Embassy Suites — Cook — Jan 2024 a atual" style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:13,resize:"none",boxSizing:"border-box",fontFamily:"Georgia,serif"}}/></div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Empregos anteriores (opcional)</div><textarea value={form.prevEmployers} onChange={e=>setForm(p=>({...p,prevEmployers:e.target.value}))} rows={4} placeholder="Ex:&#10;Edgstone Hospitality — Cook — Jan 2023 a Dez 2023&#10;Embassy Suites — Cook — Jan 2024 a atual" style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:14,resize:"none",boxSizing:"border-box",fontFamily:"Georgia,serif",outline:"none"}}/></div>
           </div>
         )}
 
@@ -2394,7 +2394,7 @@ function Clients({clients,setClients,mobile}) {
         </div>
         <div style={{marginBottom:14}}>
           <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div>
-          <select value={editForm.caseType||"EB-3"} onChange={e=>setEditForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>
+          <select value={editForm.caseType||"EB-3"} onChange={e=>setEditForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>
             {TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}
           </select>
         </div>
@@ -2875,7 +2875,7 @@ function Users({mobile}) {
         <FInp label="Senha * (mín. 6 caracteres)" type="password" value={form.password} onChange={e=>setForm(p=>({...p,password:e.target.value}))} placeholder="••••••••"/>
         <div style={{marginBottom:14}}>
           <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Perfil</div>
-          <select value={form.role} onChange={e=>setForm(p=>({...p,role:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>
+          <select value={form.role} onChange={e=>setForm(p=>({...p,role:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>
             <option value="client" style={{background:"#0D1117"}}>👤 Cliente</option>
             <option value="admin"  style={{background:"#0D1117"}}>🏢 Administrador</option>
           </select>
@@ -2884,7 +2884,7 @@ function Users({mobile}) {
           <div style={{padding:"8px 12px",background:"rgba(96,165,250,0.08)",borderRadius:10,marginBottom:16,color:T.blue,fontSize:12,fontWeight:600}}>📋 Dados do Processo</div>
           <div style={{marginBottom:14}}>
             <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Tipo de Processo</div>
-            <select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"11px 14px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:10,color:T.text,fontSize:14,fontFamily:"Georgia,serif"}}>
+            <select value={form.caseType} onChange={e=>setForm(p=>({...p,caseType:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>
               {TYPES.map(t=><option key={t} value={t} style={{background:"#0D1117"}}>{t}</option>)}
             </select>
           </div>
@@ -3224,7 +3224,7 @@ function PublicJobs() {
       {/* Overlay candidatura */}
       {applying&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"flex-end",justifyContent:"center",zIndex:300,padding:16}}>
-          <div style={{width:"100%",maxWidth:480,background:"#0F1626",borderRadius:"22px 22px 0 0",padding:"28px 24px 36px",maxHeight:"90vh",overflowY:"auto"}}>
+          <div style={{width:"100%",maxWidth:480,background:"#0F1829",borderRadius:"22px 22px 0 0",border:"1px solid rgba(255,255,255,0.1)",borderBottom:"none",padding:"28px 24px 36px",maxHeight:"90vh",overflowY:"auto"}}>
             {sent
               ? <div style={{textAlign:"center",padding:30}}>
                   <div style={{fontSize:48,marginBottom:16}}>✅</div>
