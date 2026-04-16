@@ -1116,15 +1116,29 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
     setUploading(true);
     try {
       let finalReceiptUrl = receiptUrl||null;
-      // Upload para Google Drive se cliente tem pasta e arquivo selecionado
-      if (receiptFile && driveFolderId) {
-        try {
-          const uploaded = await driveUploadFile(driveFolderId, "💳 Comprovantes de Pagamento", receiptFile);
-          finalReceiptUrl = uploaded.viewLink;
-        } catch(e) {
-          console.warn("Drive upload failed:", e.message);
+
+      if (receiptFile) {
+        // Busca folderId fresco do Firestore na hora do submit
+        let folderIdFresh = driveFolderId;
+        if (!folderIdFresh) {
+          try {
+            const uid = user.uid || user.id;
+            const freshDoc = await dbGet("users", uid);
+            folderIdFresh = freshDoc?.driveFolderId || null;
+            if (folderIdFresh) setDriveFolderId(folderIdFresh);
+          } catch(e) {}
+        }
+
+        if (folderIdFresh) {
+          try {
+            const uploaded = await driveUploadFile(folderIdFresh, "💳 Comprovantes de Pagamento", receiptFile);
+            finalReceiptUrl = uploaded.viewLink;
+          } catch(e) {
+            console.warn("Drive upload failed:", e.message);
+          }
         }
       }
+
       await addPayment({
         clientId:    user.clientId||user.uid,
         description: selectedOption.label,
