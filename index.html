@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260416172442 -->
+  <!-- build:20260416173756 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -498,16 +498,16 @@ function Sidebar({user,active,setActive,onLogout}) {
   const isAdmin=user.role==="admin";
   const isDev=user.role==="developer";
   const nav = isDev
-    ?[{id:"dashboard",icon:"⊞",label:"Dashboard"},{id:"clients",icon:"👥",label:"Clientes"},{id:"users",icon:"🔑",label:"Usuários"},{id:"messages",icon:"✉",label:"Mensagens"},{id:"payments",icon:"💳",label:"Pagamentos"},{id:"cases",icon:"📋",label:"Processos"},{id:"bulletin",icon:"🗓",label:"Visa Bulletin"},{id:"jobs",icon:"💼",label:"Vagas"},{id:"reports",icon:"📊",label:"Relatórios"},{id:"devpanel",icon:"🛠",label:"Dev Panel"}]
+    ?[{id:"dashboard",icon:"⊞",label:"Dashboard"},{id:"clients",icon:"👥",label:"Clientes"},{id:"profile",icon:"📂",label:"Docs Clientes"},{id:"users",icon:"🔑",label:"Usuários"},{id:"messages",icon:"✉",label:"Mensagens"},{id:"payments",icon:"💳",label:"Pagamentos"},{id:"cases",icon:"📋",label:"Processos"},{id:"bulletin",icon:"🗓",label:"Visa Bulletin"},{id:"jobs",icon:"💼",label:"Vagas"},{id:"reports",icon:"📊",label:"Relatórios"},{id:"devpanel",icon:"🛠",label:"Dev Panel"}]
     : isAdmin
-    ?[{id:"dashboard",icon:"⊞",label:"Dashboard"},{id:"clients",icon:"👥",label:"Clientes"},{id:"users",icon:"🔑",label:"Usuários"},{id:"messages",icon:"✉",label:"Mensagens"},{id:"payments",icon:"💳",label:"Pagamentos"},{id:"cases",icon:"📋",label:"Processos"},{id:"bulletin",icon:"🗓",label:"Visa Bulletin"},{id:"jobs",icon:"💼",label:"Vagas"},{id:"reports",icon:"📊",label:"Relatórios"}]
+    ?[{id:"dashboard",icon:"⊞",label:"Dashboard"},{id:"clients",icon:"👥",label:"Clientes"},{id:"profile",icon:"📂",label:"Docs Clientes"},{id:"users",icon:"🔑",label:"Usuários"},{id:"messages",icon:"✉",label:"Mensagens"},{id:"payments",icon:"💳",label:"Pagamentos"},{id:"cases",icon:"📋",label:"Processos"},{id:"bulletin",icon:"🗓",label:"Visa Bulletin"},{id:"jobs",icon:"💼",label:"Vagas"},{id:"reports",icon:"📊",label:"Relatórios"}]
     :[{id:"dashboard",icon:"⊞",label:"Início"},{id:"messages",icon:"✉",label:"Mensagens"},{id:"payments",icon:"💳",label:"Financeiro"},{id:"cases",icon:"📋",label:"Meu Processo"},{id:"profile",icon:"👤",label:"Meu Perfil"},{id:"bulletin",icon:"🗓",label:"Visa Bulletin"},{id:"reports",icon:"📊",label:"Relatórios"}];
   return (
     <div style={{width:220,minHeight:"100vh",background:"#080D1A",display:"flex",flexDirection:"column",borderRight:`1px solid ${T.border}`,flexShrink:0}}>
       <div style={{padding:"28px 20px 20px",borderBottom:`1px solid ${T.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:36,height:36,borderRadius:"50%",background:isDev?"linear-gradient(135deg,#7C3AED,#A78BFA)":`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"bold",color:"#fff",fontSize:16}}>{isDev?"⚡":"Z"}</div>
-          <div><div style={{color:isDev?"#A78BFA":T.gold,fontWeight:700,fontSize:13}}>Zion Solutions</div><div style={{color:T.faint,fontSize:11}}>{isDev?"Developer":"Administrador"}</div></div>
+          <div><div style={{color:isDev?"#A78BFA":T.gold,fontWeight:700,fontSize:13}}>Zion Solutions</div><div style={{color:T.faint,fontSize:11}}>{isDev?"Developer":isAdmin?"Administrador":"Cliente"}</div></div>
         </div>
       </div>
       <nav style={{flex:1,padding:"14px 10px"}}>
@@ -3691,7 +3691,7 @@ function App() {
 
   const pageTitle = {
     dashboard:(isAdmin||isDev)?"Dashboard":`Olá, ${user.name?.split(" ")[0]} 👋`,
-    profile:"Meu Perfil",
+    profile:isAdmin||isDev?"Perfil & Documentos":"Meu Perfil",
     messages:"Mensagens", payments:(isAdmin||isDev)?"Pagamentos":"Financeiro",
     cases:(isAdmin||isDev)?"Processos":"Meu Processo", bulletin:"Visa Bulletin",
     clients:"Clientes", users:"Usuários", jobs:"Vagas",
