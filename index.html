@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260416024131 -->
+  <!-- build:20260416032437 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -1328,8 +1328,6 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
           <div style={{marginTop:8}}>
             <FInp label="Ou cole um link" value={receiptUrl} onChange={e=>{setReceiptUrl(e.target.value);setReceiptFile(null);}} placeholder="https://drive.google.com/..."/>
           </div>
-        </div>
-          <strong style={{color:T.blue}}>iCloud</strong> → Compartilhar → Copiar link
         </div>
         <div style={{display:"flex",gap:10}}>
           <Btn onClick={submit} disabled={uploading||!selectedOption||(selectedOption.custom&&!customAmount)} style={{flex:1}}>{uploading?"Enviando…":"Enviar"}</Btn>
