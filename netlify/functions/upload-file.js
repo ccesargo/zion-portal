@@ -4,70 +4,84 @@ const { Readable } = require(“stream”);
 
 async function getAuthClient() {
 const credentials = JSON.parse(process.env.GDRIVE_SERVICE_ACCOUNT);
-const auth = new GoogleAuth({ credentials, scopes:[“https://www.googleapis.com/auth/drive”] });
+const auth = new GoogleAuth({ credentials, scopes: [“https://www.googleapis.com/auth/drive”] });
 return auth.getClient();
 }
 
-exports.handler = async (event) => {
-const headers = { “Access-Control-Allow-Origin”:”*”,“Access-Control-Allow-Headers”:“Content-Type”,“Content-Type”:“application/json” };
-if (event.httpMethod === “OPTIONS”) return { statusCode:200, headers, body:”” };
-if (event.httpMethod !== “POST”) return { statusCode:405, headers, body: JSON.stringify({error:“Method not allowed”}) };
+exports.handler = async function(event) {
+const headers = {
+“Access-Control-Allow-Origin”: “*”,
+“Access-Control-Allow-Headers”: “Content-Type”,
+“Content-Type”: “application/json”
+};
+
+if (event.httpMethod === “OPTIONS”) return { statusCode: 200, headers: headers, body: “” };
+if (event.httpMethod !== “POST”) return { statusCode: 405, headers: headers, body: JSON.stringify({ error: “Method not allowed” }) };
+
 try {
-const { folderId, subfolder, fileName, mimeType, fileBase64 } = JSON.parse(event.body);
-if (!folderId||!fileName||!fileBase64) throw new Error(“folderId, fileName e fileBase64 obrigatórios”);
+const body = JSON.parse(event.body);
+const folderId = body.folderId;
+const subfolder = body.subfolder;
+const fileName = body.fileName;
+const mimeType = body.mimeType;
+const fileBase64 = body.fileBase64;
 
 ```
-const authClient = await getAuthClient();
-const drive = google.drive({ version:"v3", auth:authClient });
+if (!folderId || !fileName || !fileBase64) {
+  throw new Error("folderId, fileName e fileBase64 sao obrigatorios");
+}
 
-// Find target subfolder
+const authClient = await getAuthClient();
+const drive = google.drive({ version: "v3", auth: authClient });
+
 let targetId = folderId;
 if (subfolder) {
+  const q = "name='" + subfolder + "' and '" + folderId + "' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false";
   const sub = await drive.files.list({
-    q: `name='${subfolder}' and '${folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+    q: q,
     fields: "files(id)",
     supportsAllDrives: true,
-    includeItemsFromAllDrives: true,
+    includeItemsFromAllDrives: true
   });
   if (sub.data.files.length > 0) targetId = sub.data.files[0].id;
 }
 
 const buffer = Buffer.from(fileBase64, "base64");
 const date = new Date().toISOString().split("T")[0];
+const finalName = date + "_" + fileName;
 
 const uploaded = await drive.files.create({
-  requestBody: { 
-    name: `${date}_${fileName}`, 
-    parents: [targetId],
+  requestBody: {
+    name: finalName,
+    parents: [targetId]
   },
-  media: { 
-    mimeType: mimeType||"application/octet-stream", 
-    body: Readable.from(buffer) 
+  media: {
+    mimeType: mimeType || "application/octet-stream",
+    body: Readable.from(buffer)
   },
   fields: "id,name,webViewLink",
-  supportsAllDrives: true,
+  supportsAllDrives: true
 });
 
-// Make file readable by anyone with link
 await drive.permissions.create({
   fileId: uploaded.data.id,
-  requestBody: { role:"reader", type:"anyone" },
-  supportsAllDrives: true,
+  requestBody: { role: "reader", type: "anyone" },
+  supportsAllDrives: true
 });
 
-return { 
-  statusCode:200, 
-  headers, 
-  body: JSON.stringify({ 
-    fileId: uploaded.data.id, 
-    fileName: uploaded.data.name, 
-    viewLink: uploaded.data.webViewLink 
-  }) 
+return {
+  statusCode: 200,
+  headers: headers,
+  body: JSON.stringify({
+    fileId: uploaded.data.id,
+    fileName: uploaded.data.name,
+    viewLink: uploaded.data.webViewLink
+  })
 };
 ```
 
 } catch(err) {
 console.error(“upload-file error:”, err.message);
-return { statusCode:500, headers, body: JSON.stringify({error:err.message}) };
+return { statusCode: 500, headers: headers, body: JSON.stringify({ error: err.message }) };
 }
 };
