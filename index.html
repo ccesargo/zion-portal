@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260417162134 -->
+  <!-- build:20260417165957 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -143,8 +143,20 @@ const DEVELOPER = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // VERSÃO E CHANGELOG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const APP_VERSION = "2.0.0"; 01:54
+const APP_VERSION = "2.0.0";
 const CHANGELOG = [
+  {
+    version: "2.0.0",
+    date: "16/04/2026",
+    changes: [
+      "Relatórios completos: Geral, Por Cliente, Em Risco e Receita Mensal para admin",
+      "Relatórios do cliente: Extrato financeiro, Processo e Documentos",
+      "Impressão/PDF de todos os relatórios individualmente",
+      "Área de Perfil do cliente: edição de dados pessoais e documentos",
+      "Upload OAuth2 para Google Drive — sem limitações de service account",
+      "Admin acessa perfil e documentos de qualquer cliente",
+    ]
+  },
   {
     version: "1.9.0",
     date: "16/04/2026",
@@ -2523,148 +2535,133 @@ function Reports({user,payments,clients,caseStatus,mobile}) {
   });
 
   // ── Print functions ───────────────────────────────────────────────────────
+  const buildPayRows = (cp) => cp.map(p => {
+    const st = p.status==="confirmed"?"✓ Confirmado":p.status==="rejected"?"✗ Rejeitado":"⏳ Revisão";
+    const stClass = p.status==="confirmed"?"g":p.status==="rejected"?"r":"y";
+    const link = p.receiptUrl ? "<a href='"+p.receiptUrl+"' target='_blank'>📎 Ver</a>" : "—";
+    return "<tr><td>"+p.description+"</td><td>"+fmt(p.date)+"</td><td>"+fmtUSD(p.amount)+"</td><td class='"+stClass+"'>"+st+"</td><td>"+link+"</td></tr>";
+  }).join("");
+
   const printClientFinanceiro = (c) => {
     const cp = clientPay(c.clientId||c.uid);
     const paid = cp.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
     const total = clientTotal(c);
-    const rows = cp.map(p=>`<tr><td>${p.description}</td><td>${fmt(p.date)}</td><td>${fmtUSD(p.amount)}</td><td class="${p.status==="confirmed"?"g":p.status==="rejected"?"r":"y"}">${p.status==="confirmed"?"✓ Confirmado":p.status==="rejected"?"✗ Rejeitado":"⏳ Revisão"}</td>${p.receiptUrl?`<td><a href="${p.receiptUrl}" target="_blank">📎 Ver</a></td>`:"<td>—</td>"}</tr>`).join("");
-    printReport(`Extrato Financeiro — ${c.name}`,
-      `<div style="margin-bottom:24px">
-        <div class="kpi"><div class="kpi-val">${fmtUSD(paid)}</div><div class="kpi-lbl">Total Pago</div></div>
-        <div class="kpi"><div class="kpi-val">${fmtUSD(total-paid)}</div><div class="kpi-lbl">Saldo Restante</div></div>
-        <div class="kpi"><div class="kpi-val">${Math.min(100,Math.round((paid/total)*100))||0}%</div><div class="kpi-lbl">Progresso</div></div>
-        <div class="kpi"><div class="kpi-val">${cp.filter(p=>p.status==="confirmed").length}</div><div class="kpi-lbl">Pagamentos Confirmados</div></div>
-      </div>
-      <h2>Histórico de Pagamentos</h2>
-      <table><tr><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th><th>Comprovante</th></tr>${rows}</table>`
-    );
+    const pct2 = total>0?Math.min(100,Math.round((paid/total)*100)):0;
+    const html = "<div style='margin-bottom:24px'>"
+      +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(paid)+"</div><div class='kpi-lbl'>Total Pago</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(total-paid)+"</div><div class='kpi-lbl'>Saldo Restante</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+pct2+"%</div><div class='kpi-lbl'>Progresso</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+cp.filter(p=>p.status==="confirmed").length+"</div><div class='kpi-lbl'>Confirmados</div></div>"
+      +"</div><h2>Histórico de Pagamentos</h2>"
+      +"<table><tr><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th><th>Comprovante</th></tr>"
+      +buildPayRows(cp)+"</table>";
+    printReport("Extrato Financeiro — "+c.name, html);
   };
 
   const printClientProcesso = (c) => {
-    printReport(`Relatório do Processo — ${c.name}`,
-      `<div style="margin-bottom:24px">
-        <div class="kpi"><div class="kpi-val">${c.caseType||"—"}</div><div class="kpi-lbl">Tipo</div></div>
-        <div class="kpi"><div class="kpi-val">${c.sponsor||"—"}</div><div class="kpi-lbl">Sponsor</div></div>
-        <div class="kpi"><div class="kpi-val">${fmt(c.priorityDate)||"—"}</div><div class="kpi-lbl">Priority Date</div></div>
-      </div>
-      <h2>Protocolos</h2>
-      <table><tr><th>Etapa</th><th>Protocolo</th></tr>
-        <tr><td>PERM (DOL)</td><td>${c.protocols?.perm||"—"}</td></tr>
-        <tr><td>I-140 (USCIS)</td><td>${c.protocols?.i140||"—"}</td></tr>
-        <tr><td>I-485 (USCIS)</td><td>${c.protocols?.i485||"—"}</td></tr>
-        <tr><td>NVC</td><td>${c.protocols?.nvc||"—"}</td></tr>
-      </table>`
-    );
+    const html = "<div style='margin-bottom:24px'>"
+      +"<div class='kpi'><div class='kpi-val'>"+(c.caseType||"—")+"</div><div class='kpi-lbl'>Tipo</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+(c.sponsor||"—")+"</div><div class='kpi-lbl'>Sponsor</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+(fmt(c.priorityDate)||"—")+"</div><div class='kpi-lbl'>Priority Date</div></div>"
+      +"</div><h2>Protocolos</h2>"
+      +"<table><tr><th>Etapa</th><th>Protocolo</th></tr>"
+      +"<tr><td>PERM (DOL)</td><td>"+(c.protocols?.perm||"—")+"</td></tr>"
+      +"<tr><td>I-140 (USCIS)</td><td>"+(c.protocols?.i140||"—")+"</td></tr>"
+      +"<tr><td>I-485 (USCIS)</td><td>"+(c.protocols?.i485||"—")+"</td></tr>"
+      +"<tr><td>NVC</td><td>"+(c.protocols?.nvc||"—")+"</td></tr>"
+      +"</table>";
+    printReport("Relatório do Processo — "+c.name, html);
   };
 
   const printClientDocumentos = (c) => {
-    printReport(`Documentos — ${c.name}`,
-      `<h2>Documentos de Imigração</h2>
-      <table>
-        <tr><th>Documento</th><th>Número</th><th>Validade</th><th>Status</th></tr>
-        <tr><td>Passaporte</td><td>${c.documents?.passportNum||"—"}</td><td>${fmt(c.documents?.passportExp)||"—"}</td><td>${c.documents?.passportExp&&new Date(c.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)?"⚠️ Vence em breve":"✓ OK"}</td></tr>
-        <tr><td>Visto (${c.documents?.visaType||"—"})</td><td>${c.documents?.visaNum||"—"}</td><td>${fmt(c.documents?.visaExp)||"—"}</td><td>${c.documents?.visaExp&&new Date(c.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)?"⚠️ Vence em breve":"✓ OK"}</td></tr>
-        <tr><td>I-94</td><td>${c.documents?.i94||"—"}</td><td>—</td><td>—</td></tr>
-        <tr><td>EAD</td><td>${c.documents?.eadNum||"—"}</td><td>${fmt(c.documents?.eadExp)||"—"}</td><td>—</td></tr>
-        <tr><td>A-Number</td><td>${c.documents?.aNumber||"—"}</td><td>—</td><td>—</td></tr>
-      </table>
-      <h2>Dados Pessoais</h2>
-      <table>
-        <tr><th>Campo</th><th>Valor</th></tr>
-        <tr><td>CPF</td><td>${c.personal?.cpf||"—"}</td></tr>
-        <tr><td>Data de nascimento</td><td>${fmt(c.personal?.dob)||"—"}</td></tr>
-        <tr><td>Endereço</td><td>${c.personal?.address?.street||"—"}, ${c.personal?.address?.city||""} ${c.personal?.address?.state||""}</td></tr>
-        <tr><td>Telefone</td><td>${c.personal?.phone||"—"}</td></tr>
-        <tr><td>Empregador</td><td>${c.employment?.currentEmployer||"—"} — ${c.employment?.currentRole||"—"}</td></tr>
-      </table>`
-    );
+    const vOK = c.documents?.visaExp&&new Date(c.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)?"⚠️ Vence em breve":"✓ OK";
+    const pOK = c.documents?.passportExp&&new Date(c.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)?"⚠️ Vence em breve":"✓ OK";
+    const html = "<h2>Documentos de Imigração</h2>"
+      +"<table><tr><th>Documento</th><th>Número</th><th>Validade</th><th>Status</th></tr>"
+      +"<tr><td>Passaporte</td><td>"+(c.documents?.passportNum||"—")+"</td><td>"+(fmt(c.documents?.passportExp)||"—")+"</td><td>"+pOK+"</td></tr>"
+      +"<tr><td>Visto ("+(c.documents?.visaType||"—")+")</td><td>"+(c.documents?.visaNum||"—")+"</td><td>"+(fmt(c.documents?.visaExp)||"—")+"</td><td>"+vOK+"</td></tr>"
+      +"<tr><td>I-94</td><td>"+(c.documents?.i94||"—")+"</td><td>—</td><td>—</td></tr>"
+      +"<tr><td>EAD</td><td>"+(c.documents?.eadNum||"—")+"</td><td>"+(fmt(c.documents?.eadExp)||"—")+"</td><td>—</td></tr>"
+      +"<tr><td>A-Number</td><td>"+(c.documents?.aNumber||"—")+"</td><td>—</td><td>—</td></tr>"
+      +"</table><h2>Dados Pessoais</h2>"
+      +"<table><tr><th>Campo</th><th>Valor</th></tr>"
+      +"<tr><td>CPF</td><td>"+(c.personal?.cpf||"—")+"</td></tr>"
+      +"<tr><td>Nascimento</td><td>"+(fmt(c.personal?.dob)||"—")+"</td></tr>"
+      +"<tr><td>Endereço</td><td>"+(c.personal?.address?.street||"—")+", "+(c.personal?.address?.city||"")+" "+(c.personal?.address?.state||"")+"</td></tr>"
+      +"<tr><td>Telefone</td><td>"+(c.personal?.phone||"—")+"</td></tr>"
+      +"<tr><td>Empregador</td><td>"+(c.employment?.currentEmployer||"—")+" — "+(c.employment?.currentRole||"—")+"</td></tr>"
+      +"</table>";
+    printReport("Documentos — "+c.name, html);
   };
 
   const printClientCompleto = (c) => {
     const cp = clientPay(c.clientId||c.uid);
     const paid = cp.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
     const total = clientTotal(c);
-    printReport(`Relatório Completo — ${c.name}`,
-      `<div style="margin-bottom:24px">
-        <div class="kpi"><div class="kpi-val">${c.caseType}</div><div class="kpi-lbl">Processo</div></div>
-        <div class="kpi"><div class="kpi-val">${fmtUSD(paid)}</div><div class="kpi-lbl">Pago</div></div>
-        <div class="kpi"><div class="kpi-val">${fmtUSD(total-paid)}</div><div class="kpi-lbl">Restante</div></div>
-        <div class="kpi"><div class="kpi-val">${fmt(c.priorityDate)||"—"}</div><div class="kpi-lbl">Priority Date</div></div>
-      </div>
-      <h2>Dados do Processo</h2>
-      <table>
-        <tr><td><b>Sponsor</b></td><td>${c.sponsor||"—"}</td><td><b>E-mail</b></td><td>${c.email}</td></tr>
-        <tr><td><b>PERM</b></td><td>${c.protocols?.perm||"—"}</td><td><b>I-140</b></td><td>${c.protocols?.i140||"—"}</td></tr>
-      </table>
-      <h2>Documentos</h2>
-      <table>
-        <tr><th>Documento</th><th>Número</th><th>Validade</th></tr>
-        <tr><td>Passaporte</td><td>${c.documents?.passportNum||"—"}</td><td>${fmt(c.documents?.passportExp)||"—"}</td></tr>
-        <tr><td>Visto (${c.documents?.visaType||"—"})</td><td>${c.documents?.visaNum||"—"}</td><td>${fmt(c.documents?.visaExp)||"—"}</td></tr>
-        <tr><td>EAD</td><td>${c.documents?.eadNum||"—"}</td><td>${fmt(c.documents?.eadExp)||"—"}</td></tr>
-      </table>
-      <h2>Histórico Financeiro</h2>
-      <table><tr><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th></tr>
-        ${cp.map(p=>`<tr><td>${p.description}</td><td>${fmt(p.date)}</td><td>${fmtUSD(p.amount)}</td><td class="${p.status==="confirmed"?"g":"y"}">${p.status==="confirmed"?"✓ Confirmado":"⏳ Revisão"}</td></tr>`).join("")}
-      </table>`
-    );
+    const html = "<div style='margin-bottom:24px'>"
+      +"<div class='kpi'><div class='kpi-val'>"+(c.caseType||"—")+"</div><div class='kpi-lbl'>Processo</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(paid)+"</div><div class='kpi-lbl'>Pago</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(total-paid)+"</div><div class='kpi-lbl'>Restante</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+(fmt(c.priorityDate)||"—")+"</div><div class='kpi-lbl'>Priority Date</div></div>"
+      +"</div><h2>Dados do Processo</h2>"
+      +"<table><tr><td><b>Sponsor</b></td><td>"+(c.sponsor||"—")+"</td><td><b>E-mail</b></td><td>"+c.email+"</td></tr>"
+      +"<tr><td><b>PERM</b></td><td>"+(c.protocols?.perm||"—")+"</td><td><b>I-140</b></td><td>"+(c.protocols?.i140||"—")+"</td></tr></table>"
+      +"<h2>Documentos</h2>"
+      +"<table><tr><th>Documento</th><th>Número</th><th>Validade</th></tr>"
+      +"<tr><td>Passaporte</td><td>"+(c.documents?.passportNum||"—")+"</td><td>"+(fmt(c.documents?.passportExp)||"—")+"</td></tr>"
+      +"<tr><td>Visto ("+(c.documents?.visaType||"—")+")</td><td>"+(c.documents?.visaNum||"—")+"</td><td>"+(fmt(c.documents?.visaExp)||"—")+"</td></tr>"
+      +"<tr><td>EAD</td><td>"+(c.documents?.eadNum||"—")+"</td><td>"+(fmt(c.documents?.eadExp)||"—")+"</td></tr></table>"
+      +"<h2>Histórico Financeiro</h2>"
+      +"<table><tr><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th></tr>"
+      +cp.map(p=>"<tr><td>"+p.description+"</td><td>"+fmt(p.date)+"</td><td>"+fmtUSD(p.amount)+"</td><td class='"+(p.status==="confirmed"?"g":"y")+"'>"+(p.status==="confirmed"?"✓ Confirmado":"⏳ Revisão")+"</td></tr>").join("")
+      +"</table>";
+    printReport("Relatório Completo — "+c.name, html);
   };
 
-  const printMyExtrato = () => {
-    const c = myClient;
-    if (!c) return;
-    printClientFinanceiro(c);
-  };
-
-  const printMyProcesso = () => {
-    if (!myClient) return;
-    printClientProcesso(myClient);
-  };
-
-  const printMyDocumentos = () => {
-    if (!myClient) return;
-    printClientDocumentos(myClient);
-  };
+  const printMyExtrato = () => { if (!myClient) return; printClientFinanceiro(myClient); };
+  const printMyProcesso = () => { if (!myClient) return; printClientProcesso(myClient); };
+  const printMyDocumentos = () => { if (!myClient) return; printClientDocumentos(myClient); };
 
   const printGeralAdmin = () => {
     const rows = clients.map(c=>{
       const paid = clientPaid(c.clientId||c.uid);
       const total = clientTotal(c);
-      return `<tr><td>${c.name}</td><td>${c.caseType}</td><td>${c.sponsor||"—"}</td><td>${fmtUSD(paid)}</td><td>${fmtUSD(total-paid)}</td><td>${Math.min(100,Math.round((paid/total)*100))||0}%</td></tr>`;
+      const pct2 = total>0?Math.min(100,Math.round((paid/total)*100)):0;
+      return "<tr><td>"+c.name+"</td><td>"+c.caseType+"</td><td>"+(c.sponsor||"—")+"</td><td>"+fmtUSD(paid)+"</td><td>"+fmtUSD(total-paid)+"</td><td>"+pct2+"%</td></tr>";
     }).join("");
     const totalAll = clients.reduce((s,c)=>s+clientTotal(c),0);
     const paidAll = clients.reduce((s,c)=>s+clientPaid(c.clientId||c.uid),0);
-    printReport("Relatório Geral",
-      `<div style="margin-bottom:24px">
-        <div class="kpi"><div class="kpi-val">${clients.length}</div><div class="kpi-lbl">Clientes</div></div>
-        <div class="kpi"><div class="kpi-val">${fmtUSD(paidAll)}</div><div class="kpi-lbl">Total Arrecadado</div></div>
-        <div class="kpi"><div class="kpi-val">${fmtUSD(totalAll-paidAll)}</div><div class="kpi-lbl">A Receber</div></div>
-        <div class="kpi"><div class="kpi-val">${atRisk.length}</div><div class="kpi-lbl">Clientes em Risco</div></div>
-      </div>
-      <h2>Por Cliente</h2>
-      <table><tr><th>Nome</th><th>Processo</th><th>Sponsor</th><th>Pago</th><th>Restante</th><th>%</th></tr>${rows}</table>`
-    );
+    const html = "<div style='margin-bottom:24px'>"
+      +"<div class='kpi'><div class='kpi-val'>"+clients.length+"</div><div class='kpi-lbl'>Clientes</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(paidAll)+"</div><div class='kpi-lbl'>Total Arrecadado</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(totalAll-paidAll)+"</div><div class='kpi-lbl'>A Receber</div></div>"
+      +"<div class='kpi'><div class='kpi-val'>"+atRisk.length+"</div><div class='kpi-lbl'>Em Risco</div></div>"
+      +"</div><h2>Por Cliente</h2>"
+      +"<table><tr><th>Nome</th><th>Processo</th><th>Sponsor</th><th>Pago</th><th>Restante</th><th>%</th></tr>"+rows+"</table>";
+    printReport("Relatório Geral", html);
   };
 
   const printRisco = () => {
     const rows = atRisk.map(c=>{
       const v = c.documents?.visaExp;
       const p = c.documents?.passportExp;
-      return `<tr><td>${c.name}</td><td>${c.email}</td><td>${v?fmt(v)+"&nbsp;"+( new Date(v)<new Date()?'<span class="r">VENCIDO</span>':'<span class="y">⚠️</span>'):"—"}</td><td>${p?fmt(p)+"&nbsp;"+(new Date(p)<new Date()?'<span class="r">VENCIDO</span>':'<span class="y">⚠️</span>'):"—"}</td></tr>`;
+      const vStr = v ? fmt(v)+" "+(new Date(v)<new Date()?"VENCIDO":"⚠️") : "—";
+      const pStr = p ? fmt(p)+" "+(new Date(p)<new Date()?"VENCIDO":"⚠️") : "—";
+      return "<tr><td>"+c.name+"</td><td>"+c.email+"</td><td>"+vStr+"</td><td>"+pStr+"</td></tr>";
     }).join("");
-    printReport("Clientes em Risco — Documentos",
-      `<h2>Clientes com documentos vencidos ou próximos do vencimento</h2>
-      <table><tr><th>Nome</th><th>E-mail</th><th>Visto</th><th>Passaporte</th></tr>${rows||"<tr><td colspan=4>Nenhum cliente em risco.</td></tr>"}</table>`
-    );
+    const html = "<h2>Clientes com documentos vencidos ou próximos do vencimento</h2>"
+      +"<table><tr><th>Nome</th><th>E-mail</th><th>Visto</th><th>Passaporte</th></tr>"
+      +(rows||"<tr><td colspan='4'>Nenhum cliente em risco.</td></tr>")+"</table>";
+    printReport("Clientes em Risco — Documentos", html);
   };
 
   const printReceita = () => {
     const monthly = monthlyRevenue();
-    const rows = monthly.map(([m,v])=>`<tr><td>${m}</td><td>${fmtUSD(v)}</td></tr>`).join("");
-    printReport("Receita Mensal",
-      `<h2>Últimos 6 meses</h2>
-      <table><tr><th>Mês</th><th>Receita</th></tr>${rows||"<tr><td colspan=2>Sem dados.</td></tr>"}</table>`
-    );
+    const rows = monthly.map(function(item){ return "<tr><td>"+item[0]+"</td><td>"+fmtUSD(item[1])+"</td></tr>"; }).join("");
+    const html = "<h2>Últimos 6 meses</h2>"
+      +"<table><tr><th>Mês</th><th>Receita</th></tr>"
+      +(rows||"<tr><td colspan='2'>Sem dados.</td></tr>")+"</table>";
+    printReport("Receita Mensal", html);
   };
 
   // ── ADMIN TABS ────────────────────────────────────────────────────────────
