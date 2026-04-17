@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260416173756 -->
+  <!-- build:20260417162134 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -143,7 +143,7 @@ const DEVELOPER = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // VERSÃO E CHANGELOG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const APP_VERSION = "1.9.1"; // built 16/04/2026 01:54
+const APP_VERSION = "2.0.0"; 01:54
 const CHANGELOG = [
   {
     version: "1.9.0",
@@ -2480,121 +2480,548 @@ function Clients({clients,setClients,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // REPORTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function Reports({user,payments,clients,mobile}) {
-  const isAdmin=user.role==="admin";
-  const [tab,setTab]=useState("financial");
-  const myPay=isAdmin?payments:payments.filter(p=>p.clientId===user.clientId);
-  const confirmed=myPay.filter(p=>p.status==="confirmed");
-  const totalPago=confirmed.reduce((s,p)=>s+p.amount,0);
+function Reports({user,payments,clients,caseStatus,mobile}) {
+  const isAdmin = user.role==="admin"||user.role==="developer";
+  const [tab, setTab] = useState(isAdmin?"geral":"extrato");
+  const [selClient, setSelClient] = useState("all");
 
-  // Plano dinâmico — usa dados do cliente logado, user.plan ou padrão
-  const clientData = isAdmin ? null : (clients.find(c=>(c.clientId||c.uid)===user.clientId||c.uid===user.uid) || user);
-  const pl_assin   = clientData?.plan?.assinatura  ?? 0;
-  const pl_parcela = clientData?.plan?.parcela     ?? 0;
-  const pl_nparc   = clientData?.plan?.numParcelas ?? 0;
-  const pl_i140    = clientData?.plan?.i140        ?? 0;
-  const pl_dep     = clientData?.plan?.dependente  ?? 0;
-  const totalOwed  = isAdmin
-    ? clients.reduce((s,c)=>s+(c.plan?.total||0), 0) // soma de todos os planos
-    : pl_assin + (pl_parcela*pl_nparc) + pl_i140 + pl_dep;
-  const pct        = Math.min(100,Math.round((totalPago/totalOwed)*100));
+  // ── helpers ──────────────────────────────────────────────────────────────
+  const clientPay = (cid) => payments.filter(p=>p.clientId===cid);
+  const clientPaid = (cid) => clientPay(cid).filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
+  const clientTotal = (c) => c?.plan?.total || (c?.plan?.assinatura||0)+((c?.plan?.parcela||0)*(c?.plan?.numParcelas||0))+(c?.plan?.i140||0)+(c?.plan?.dependente||0);
 
-  // Progresso por etapa (igual à tela Financeiro)
-  let saldo = totalPago;
-  const cs = amt => { if(!amt)return{pago:0,done:false}; const p=Math.min(amt,saldo); saldo=Math.max(0,saldo-amt); return{pago:p,done:p>=amt}; };
-  const s1=cs(pl_assin), s2=cs(pl_parcela*pl_nparc), s3=cs(pl_i140), s4=cs(pl_dep);
-  const plan=[
-    {label:"Assinatura",         amount:pl_assin,           ...s1},
-    {label:`${pl_nparc} parcelas`,amount:pl_parcela*pl_nparc,...s2},
-    {label:"I-140",              amount:pl_i140,            ...s3},
-    {label:"Dependente",         amount:pl_dep,             ...s4},
+  const myClient = isAdmin ? null : (clients.find(c=>(c.clientId||c.uid)===(user.clientId||user.uid))||user);
+  const myPay = isAdmin
+    ? (selClient==="all" ? payments : payments.filter(p=>p.clientId===selClient))
+    : payments.filter(p=>p.clientId===(user.clientId||user.uid));
+
+  const confirmed = myPay.filter(p=>p.status==="confirmed");
+  const pending   = myPay.filter(p=>p.status==="pending_review");
+  const totalPago = confirmed.reduce((s,p)=>s+p.amount,0);
+  const totalOwed = isAdmin
+    ? (selClient==="all" ? clients.reduce((s,c)=>s+clientTotal(c),0) : clientTotal(clients.find(c=>(c.clientId||c.uid)===selClient)))
+    : clientTotal(myClient);
+  const pct = totalOwed>0 ? Math.min(100,Math.round((totalPago/totalOwed)*100)) : 0;
+
+  // Monthly revenue (admin)
+  const monthlyRevenue = () => {
+    const map = {};
+    payments.filter(p=>p.status==="confirmed").forEach(p=>{
+      const m = p.date?.substring(0,7)||"";
+      if (m) map[m] = (map[m]||0) + p.amount;
+    });
+    return Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).slice(-6);
+  };
+
+  // Clients at risk (visto/passaporte vencendo em 90 dias)
+  const atRisk = clients.filter(c=>{
+    const v = c.documents?.visaExp;
+    const p = c.documents?.passportExp;
+    const d90 = Date.now() + 90*24*60*60*1000;
+    const d180 = Date.now() + 180*24*60*60*1000;
+    return (v && new Date(v)<new Date(d90)) || (p && new Date(p)<new Date(d180));
+  });
+
+  // ── Print functions ───────────────────────────────────────────────────────
+  const printClientFinanceiro = (c) => {
+    const cp = clientPay(c.clientId||c.uid);
+    const paid = cp.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
+    const total = clientTotal(c);
+    const rows = cp.map(p=>`<tr><td>${p.description}</td><td>${fmt(p.date)}</td><td>${fmtUSD(p.amount)}</td><td class="${p.status==="confirmed"?"g":p.status==="rejected"?"r":"y"}">${p.status==="confirmed"?"✓ Confirmado":p.status==="rejected"?"✗ Rejeitado":"⏳ Revisão"}</td>${p.receiptUrl?`<td><a href="${p.receiptUrl}" target="_blank">📎 Ver</a></td>`:"<td>—</td>"}</tr>`).join("");
+    printReport(`Extrato Financeiro — ${c.name}`,
+      `<div style="margin-bottom:24px">
+        <div class="kpi"><div class="kpi-val">${fmtUSD(paid)}</div><div class="kpi-lbl">Total Pago</div></div>
+        <div class="kpi"><div class="kpi-val">${fmtUSD(total-paid)}</div><div class="kpi-lbl">Saldo Restante</div></div>
+        <div class="kpi"><div class="kpi-val">${Math.min(100,Math.round((paid/total)*100))||0}%</div><div class="kpi-lbl">Progresso</div></div>
+        <div class="kpi"><div class="kpi-val">${cp.filter(p=>p.status==="confirmed").length}</div><div class="kpi-lbl">Pagamentos Confirmados</div></div>
+      </div>
+      <h2>Histórico de Pagamentos</h2>
+      <table><tr><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th><th>Comprovante</th></tr>${rows}</table>`
+    );
+  };
+
+  const printClientProcesso = (c) => {
+    printReport(`Relatório do Processo — ${c.name}`,
+      `<div style="margin-bottom:24px">
+        <div class="kpi"><div class="kpi-val">${c.caseType||"—"}</div><div class="kpi-lbl">Tipo</div></div>
+        <div class="kpi"><div class="kpi-val">${c.sponsor||"—"}</div><div class="kpi-lbl">Sponsor</div></div>
+        <div class="kpi"><div class="kpi-val">${fmt(c.priorityDate)||"—"}</div><div class="kpi-lbl">Priority Date</div></div>
+      </div>
+      <h2>Protocolos</h2>
+      <table><tr><th>Etapa</th><th>Protocolo</th></tr>
+        <tr><td>PERM (DOL)</td><td>${c.protocols?.perm||"—"}</td></tr>
+        <tr><td>I-140 (USCIS)</td><td>${c.protocols?.i140||"—"}</td></tr>
+        <tr><td>I-485 (USCIS)</td><td>${c.protocols?.i485||"—"}</td></tr>
+        <tr><td>NVC</td><td>${c.protocols?.nvc||"—"}</td></tr>
+      </table>`
+    );
+  };
+
+  const printClientDocumentos = (c) => {
+    printReport(`Documentos — ${c.name}`,
+      `<h2>Documentos de Imigração</h2>
+      <table>
+        <tr><th>Documento</th><th>Número</th><th>Validade</th><th>Status</th></tr>
+        <tr><td>Passaporte</td><td>${c.documents?.passportNum||"—"}</td><td>${fmt(c.documents?.passportExp)||"—"}</td><td>${c.documents?.passportExp&&new Date(c.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)?"⚠️ Vence em breve":"✓ OK"}</td></tr>
+        <tr><td>Visto (${c.documents?.visaType||"—"})</td><td>${c.documents?.visaNum||"—"}</td><td>${fmt(c.documents?.visaExp)||"—"}</td><td>${c.documents?.visaExp&&new Date(c.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)?"⚠️ Vence em breve":"✓ OK"}</td></tr>
+        <tr><td>I-94</td><td>${c.documents?.i94||"—"}</td><td>—</td><td>—</td></tr>
+        <tr><td>EAD</td><td>${c.documents?.eadNum||"—"}</td><td>${fmt(c.documents?.eadExp)||"—"}</td><td>—</td></tr>
+        <tr><td>A-Number</td><td>${c.documents?.aNumber||"—"}</td><td>—</td><td>—</td></tr>
+      </table>
+      <h2>Dados Pessoais</h2>
+      <table>
+        <tr><th>Campo</th><th>Valor</th></tr>
+        <tr><td>CPF</td><td>${c.personal?.cpf||"—"}</td></tr>
+        <tr><td>Data de nascimento</td><td>${fmt(c.personal?.dob)||"—"}</td></tr>
+        <tr><td>Endereço</td><td>${c.personal?.address?.street||"—"}, ${c.personal?.address?.city||""} ${c.personal?.address?.state||""}</td></tr>
+        <tr><td>Telefone</td><td>${c.personal?.phone||"—"}</td></tr>
+        <tr><td>Empregador</td><td>${c.employment?.currentEmployer||"—"} — ${c.employment?.currentRole||"—"}</td></tr>
+      </table>`
+    );
+  };
+
+  const printClientCompleto = (c) => {
+    const cp = clientPay(c.clientId||c.uid);
+    const paid = cp.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
+    const total = clientTotal(c);
+    printReport(`Relatório Completo — ${c.name}`,
+      `<div style="margin-bottom:24px">
+        <div class="kpi"><div class="kpi-val">${c.caseType}</div><div class="kpi-lbl">Processo</div></div>
+        <div class="kpi"><div class="kpi-val">${fmtUSD(paid)}</div><div class="kpi-lbl">Pago</div></div>
+        <div class="kpi"><div class="kpi-val">${fmtUSD(total-paid)}</div><div class="kpi-lbl">Restante</div></div>
+        <div class="kpi"><div class="kpi-val">${fmt(c.priorityDate)||"—"}</div><div class="kpi-lbl">Priority Date</div></div>
+      </div>
+      <h2>Dados do Processo</h2>
+      <table>
+        <tr><td><b>Sponsor</b></td><td>${c.sponsor||"—"}</td><td><b>E-mail</b></td><td>${c.email}</td></tr>
+        <tr><td><b>PERM</b></td><td>${c.protocols?.perm||"—"}</td><td><b>I-140</b></td><td>${c.protocols?.i140||"—"}</td></tr>
+      </table>
+      <h2>Documentos</h2>
+      <table>
+        <tr><th>Documento</th><th>Número</th><th>Validade</th></tr>
+        <tr><td>Passaporte</td><td>${c.documents?.passportNum||"—"}</td><td>${fmt(c.documents?.passportExp)||"—"}</td></tr>
+        <tr><td>Visto (${c.documents?.visaType||"—"})</td><td>${c.documents?.visaNum||"—"}</td><td>${fmt(c.documents?.visaExp)||"—"}</td></tr>
+        <tr><td>EAD</td><td>${c.documents?.eadNum||"—"}</td><td>${fmt(c.documents?.eadExp)||"—"}</td></tr>
+      </table>
+      <h2>Histórico Financeiro</h2>
+      <table><tr><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th></tr>
+        ${cp.map(p=>`<tr><td>${p.description}</td><td>${fmt(p.date)}</td><td>${fmtUSD(p.amount)}</td><td class="${p.status==="confirmed"?"g":"y"}">${p.status==="confirmed"?"✓ Confirmado":"⏳ Revisão"}</td></tr>`).join("")}
+      </table>`
+    );
+  };
+
+  const printMyExtrato = () => {
+    const c = myClient;
+    if (!c) return;
+    printClientFinanceiro(c);
+  };
+
+  const printMyProcesso = () => {
+    if (!myClient) return;
+    printClientProcesso(myClient);
+  };
+
+  const printMyDocumentos = () => {
+    if (!myClient) return;
+    printClientDocumentos(myClient);
+  };
+
+  const printGeralAdmin = () => {
+    const rows = clients.map(c=>{
+      const paid = clientPaid(c.clientId||c.uid);
+      const total = clientTotal(c);
+      return `<tr><td>${c.name}</td><td>${c.caseType}</td><td>${c.sponsor||"—"}</td><td>${fmtUSD(paid)}</td><td>${fmtUSD(total-paid)}</td><td>${Math.min(100,Math.round((paid/total)*100))||0}%</td></tr>`;
+    }).join("");
+    const totalAll = clients.reduce((s,c)=>s+clientTotal(c),0);
+    const paidAll = clients.reduce((s,c)=>s+clientPaid(c.clientId||c.uid),0);
+    printReport("Relatório Geral",
+      `<div style="margin-bottom:24px">
+        <div class="kpi"><div class="kpi-val">${clients.length}</div><div class="kpi-lbl">Clientes</div></div>
+        <div class="kpi"><div class="kpi-val">${fmtUSD(paidAll)}</div><div class="kpi-lbl">Total Arrecadado</div></div>
+        <div class="kpi"><div class="kpi-val">${fmtUSD(totalAll-paidAll)}</div><div class="kpi-lbl">A Receber</div></div>
+        <div class="kpi"><div class="kpi-val">${atRisk.length}</div><div class="kpi-lbl">Clientes em Risco</div></div>
+      </div>
+      <h2>Por Cliente</h2>
+      <table><tr><th>Nome</th><th>Processo</th><th>Sponsor</th><th>Pago</th><th>Restante</th><th>%</th></tr>${rows}</table>`
+    );
+  };
+
+  const printRisco = () => {
+    const rows = atRisk.map(c=>{
+      const v = c.documents?.visaExp;
+      const p = c.documents?.passportExp;
+      return `<tr><td>${c.name}</td><td>${c.email}</td><td>${v?fmt(v)+"&nbsp;"+( new Date(v)<new Date()?'<span class="r">VENCIDO</span>':'<span class="y">⚠️</span>'):"—"}</td><td>${p?fmt(p)+"&nbsp;"+(new Date(p)<new Date()?'<span class="r">VENCIDO</span>':'<span class="y">⚠️</span>'):"—"}</td></tr>`;
+    }).join("");
+    printReport("Clientes em Risco — Documentos",
+      `<h2>Clientes com documentos vencidos ou próximos do vencimento</h2>
+      <table><tr><th>Nome</th><th>E-mail</th><th>Visto</th><th>Passaporte</th></tr>${rows||"<tr><td colspan=4>Nenhum cliente em risco.</td></tr>"}</table>`
+    );
+  };
+
+  const printReceita = () => {
+    const monthly = monthlyRevenue();
+    const rows = monthly.map(([m,v])=>`<tr><td>${m}</td><td>${fmtUSD(v)}</td></tr>`).join("");
+    printReport("Receita Mensal",
+      `<h2>Últimos 6 meses</h2>
+      <table><tr><th>Mês</th><th>Receita</th></tr>${rows||"<tr><td colspan=2>Sem dados.</td></tr>"}</table>`
+    );
+  };
+
+  // ── ADMIN TABS ────────────────────────────────────────────────────────────
+  const adminTabs = [
+    {id:"geral",    label:"📊 Geral"},
+    {id:"cliente",  label:"👤 Por Cliente"},
+    {id:"risco",    label:"⚠️ Em Risco"},
+    {id:"receita",  label:"📈 Receita"},
   ];
 
-  const tabs=isAdmin?[{id:"financial",label:"💰 Financeiro"},{id:"cases",label:"📋 Casos"},{id:"types",label:"🗂 Tipos"}]:[{id:"financial",label:"💰 Financeiro"}];
+  // ── CLIENT TABS ───────────────────────────────────────────────────────────
+  const clientTabs = [
+    {id:"extrato",   label:"💰 Extrato"},
+    {id:"processo",  label:"📋 Processo"},
+    {id:"docs",      label:"🪪 Documentos"},
+  ];
 
-  const doPrint=()=>{
-    if(tab==="financial"){
-      const rows=myPay.map(p=>{const cl=clients.find(c=>(c.clientId||c.uid)===p.clientId);return `<tr>${isAdmin?`<td>${cl?.name?.split(" ")[0]||p.clientId}</td>`:""}<td>${p.description}</td><td>${fmt(p.date)}</td><td>${fmtUSD(p.amount)}</td><td class="${p.status==="confirmed"?"g":"y"}">${p.status==="confirmed"?"Confirmado":"Revisão"}</td></tr>`;}).join("");
-      const perC=clients.map(c=>{const pd=payments.filter(p=>p.clientId===(c.clientId||c.uid)&&p.status==="confirmed").reduce((s,p)=>s+p.amount,0);return `<tr><td>${c.name}</td><td>${fmtUSD(pd)}</td><td>${fmtUSD(totalOwed)}</td><td>${Math.min(100,Math.round((pd/totalOwed)*100))}%</td></tr>`;}).join("");
-      printReport(isAdmin?"Relatório Financeiro Geral":"Relatório Financeiro",`<div style="margin-bottom:24px"><div class="kpi"><div class="kpi-val">${fmtUSD(totalPago)}</div><div class="kpi-lbl">${isAdmin?"Arrecadado":"Pago"}</div></div><div class="kpi"><div class="kpi-val">${fmtUSD(totalOwed-totalPago)}</div><div class="kpi-lbl">Restante</div></div><div class="kpi"><div class="kpi-val">${pct}%</div><div class="kpi-lbl">Progresso</div></div><div class="kpi"><div class="kpi-val">${confirmed.length}</div><div class="kpi-lbl">Confirmados</div></div></div>${isAdmin&&clients.length>0?`<h2>Por Cliente</h2><table><tr><th>Cliente</th><th>Pago</th><th>Total</th><th>%</th></tr>${perC}</table>`:""}<h2>Histórico</h2><table><tr>${isAdmin?"<th>Cliente</th>":""}<th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th></tr>${rows}</table>`);
-    } else if(tab==="cases"){
-      printReport("Relatório de Status dos Casos",`<h2>Por Cliente</h2><table><tr><th>Cliente</th><th>Processo</th><th>Sponsor</th><th>Priority Date</th></tr>${clients.map(c=>`<tr><td>${c.name}</td><td>${c.caseType||"EB-3"}</td><td>${c.sponsor||"—"}</td><td>${fmt(c.priorityDate)}</td></tr>`).join("")}</table>`);
-    } else {
-      const tc={}; clients.forEach(c=>{const t=c.caseType||"EB-3";tc[t]=(tc[t]||0)+1;});
-      printReport("Relatório por Tipo",`<h2>Distribuição</h2><table><tr><th>Tipo</th><th>Qtd</th><th>%</th></tr>${Object.entries(tc).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td><td>${clients.length>0?Math.round((v/clients.length)*100):0}%</td></tr>`).join("")}</table><h2>Clientes</h2><table><tr><th>Cliente</th><th>Tipo</th><th>E-mail</th></tr>${clients.map(c=>`<tr><td>${c.name}</td><td>${c.caseType||"EB-3"}</td><td>${c.email}</td></tr>`).join("")}</table>`);
-    }
-  };
+  const tabs = isAdmin ? adminTabs : clientTabs;
+
+  const KPI = ({label,value,color}) => (
+    <Card style={{padding:16,textAlign:"center"}}>
+      <div style={{color:color||T.gold,fontSize:22,fontWeight:700}}>{value}</div>
+      <div style={{color:T.faint,fontSize:11,marginTop:4}}>{label}</div>
+    </Card>
+  );
+
+  const Row = ({label,value,color}) => (
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 0",borderBottom:`1px solid ${T.border}`}}>
+      <span style={{color:T.faint,fontSize:13}}>{label}</span>
+      <span style={{color:color||T.text,fontSize:13,fontWeight:600}}>{value}</span>
+    </div>
+  );
 
   return (
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:10}}>
-        <div style={{display:"flex",gap:8,background:"rgba(255,255,255,0.04)",padding:5,borderRadius:12,border:`1px solid ${T.border}`}}>
-          {tabs.map(t=><button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"7px 16px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:600,fontSize:13,background:tab===t.id?`linear-gradient(135deg,${T.goldDim},${T.gold})`:"transparent",color:tab===t.id?"#0A0F1E":T.dim,fontFamily:"Georgia,serif"}}>{t.label}</button>)}
-        </div>
-        <Btn variant="ghost" onClick={doPrint} style={{padding:"7px 16px",fontSize:13}}>🖨 Imprimir / PDF</Btn>
+
+      {/* Tab bar */}
+      <div style={{display:"flex",gap:6,background:"rgba(255,255,255,0.04)",padding:5,borderRadius:12,border:`1px solid ${T.border}`,overflowX:"auto"}}>
+        {tabs.map(t=>(
+          <button key={t.id} onClick={()=>setTab(t.id)} style={{padding:"7px 16px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:600,fontSize:13,background:tab===t.id?`linear-gradient(135deg,${T.goldDim},${T.gold})`:"transparent",color:tab===t.id?"#0A0F1E":T.dim,fontFamily:"Georgia,serif",whiteSpace:"nowrap",flexShrink:0}}>
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {tab==="financial"&&<>
-        <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"1fr 1fr 1fr 1fr",gap:14}}>
-          {[{label:isAdmin?"Total Arrecadado":"Total Pago",value:fmtUSD(totalPago),color:T.green},{label:"Saldo Restante",value:fmtUSD(totalOwed-totalPago),color:T.amber},{label:"Progresso",value:`${pct}%`,color:T.gold},{label:"Confirmados",value:confirmed.length,color:T.blue}].map(k=>(
-            <Card key={k.label} style={{padding:16,textAlign:"center"}}><div style={{color:k.color,fontSize:22,fontWeight:700}}>{k.value}</div><div style={{color:T.faint,fontSize:11,marginTop:4}}>{k.label}</div></Card>
-          ))}
-        </div>
-        <Card>
-          <h4 style={{color:T.gold,margin:"0 0 16px"}}>Progresso por Etapa</h4>
-          {plan.map((item,i)=><ProgRow key={i} label={item.label} value={item.pago} total={item.amount} color={[T.green,T.gold,T.blue,"#8B5CF6"][i]}/>)}
-        </Card>
-        {isAdmin&&clients.length>0&&<Card>
-          <h4 style={{color:T.gold,margin:"0 0 16px"}}>Progresso por Cliente</h4>
-          {clients.map((c,i)=>{const pd=payments.filter(p=>p.clientId===(c.clientId||c.uid)&&p.status==="confirmed").reduce((s,p)=>s+p.amount,0);return <ProgRow key={c.uid} label={c.name?.split(" ").slice(0,2).join(" ")} value={pd} total={totalOwed} color={[T.gold,T.blue,T.green,"#8B5CF6"][i%4]}/>;})}</Card>}
-        <Card>
-          <h4 style={{color:T.gold,margin:"0 0 16px"}}>{isAdmin?"Todos os Pagamentos":"Histórico Completo"}</h4>
-          {myPay.length===0?<div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum pagamento.</div>:(
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <thead><tr>{(isAdmin?["Cliente","Descrição","Data","Valor","Status"]:["Descrição","Data","Valor","Status"]).map(h=><th key={h} style={{color:T.faint,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em",padding:"8px 12px",textAlign:"left",borderBottom:`1px solid ${T.border}`}}>{h}</th>)}</tr></thead>
-              <tbody>{myPay.map(p=>{const cl=clients.find(c=>(c.clientId||c.uid)===p.clientId);return(<tr key={p.id} style={{borderTop:`1px solid rgba(255,255,255,0.05)`}}>{isAdmin&&<td style={{padding:"10px 12px",color:T.dim,fontSize:13}}>{cl?.name?.split(" ")[0]||p.clientId}</td>}<td style={{padding:"10px 12px",color:T.text,fontWeight:600,fontSize:13}}>{p.description}</td><td style={{padding:"10px 12px",color:T.faint,fontSize:13}}>{fmt(p.date)}</td><td style={{padding:"10px 12px",color:T.gold,fontWeight:700,fontSize:13}}>{fmtUSD(p.amount)}</td><td style={{padding:"10px 12px"}}>{p.status==="confirmed"?<span style={{color:T.green,fontSize:12}}>✓</span>:p.status==="rejected"?<span style={{color:T.red,fontSize:12}}>✗</span>:<span style={{color:T.amber,fontSize:12}}>⏳</span>}</td></tr>);})}</tbody>
-            </table>
-          )}
-        </Card>
-      </>}
-
-      {tab==="cases"&&isAdmin&&<>
-        <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"1fr 1fr 1fr 1fr",gap:14}}>
-          {[{label:"Em Análise",value:clients.length,color:T.amber},{label:"Aprovados",value:0,color:T.green},{label:"Pendentes",value:clients.length*3,color:T.dim},{label:"Clientes",value:clients.length,color:T.gold}].map(k=><Card key={k.label} style={{padding:16,textAlign:"center"}}><div style={{color:k.color,fontSize:22,fontWeight:700}}>{k.value}</div><div style={{color:T.faint,fontSize:11,marginTop:4}}>{k.label}</div></Card>)}
-        </div>
-        <Card>
-          <h4 style={{color:T.gold,margin:"0 0 14px"}}>Detalhe por Cliente</h4>
-          {clients.length===0?<div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum cliente.</div>:(
-            <table style={{width:"100%",borderCollapse:"collapse"}}>
-              <thead><tr>{["Cliente","Processo","Sponsor","Etapa","Status","Priority Date"].map(h=><th key={h} style={{color:T.faint,fontSize:11,textTransform:"uppercase",letterSpacing:"0.05em",padding:"8px 12px",textAlign:"left",borderBottom:`1px solid ${T.border}`}}>{h}</th>)}</tr></thead>
-              <tbody>{clients.map(c=><tr key={c.uid} style={{borderTop:`1px solid rgba(255,255,255,0.05)`}}><td style={{padding:"10px 12px",color:T.text,fontWeight:600,fontSize:13}}>{c.name}</td><td style={{padding:"10px 12px",color:T.gold,fontSize:13}}>{c.caseType||"EB-3"}</td><td style={{padding:"10px 12px",color:T.faint,fontSize:12}}>{c.sponsor||"—"}</td><td style={{padding:"10px 12px",color:T.text,fontSize:13}}>PERM</td><td style={{padding:"10px 12px"}}><Badge status="analyst_review"/></td><td style={{padding:"10px 12px",color:T.faint,fontSize:13}}>{fmt(c.priorityDate)}</td></tr>)}</tbody>
-            </table>
-          )}
-        </Card>
-      </>}
-
-      {tab==="types"&&isAdmin&&(()=>{
-        const tc={}; clients.forEach(c=>{const t=c.caseType||"EB-3";tc[t]=(tc[t]||0)+1;});
-        const colors=[T.gold,T.blue,T.green,"#8B5CF6"];
-        return <>
-          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:14}}>
+      {/* ── ADMIN: GERAL ── */}
+      {isAdmin&&tab==="geral"&&(()=>{
+        const totalAll = clients.reduce((s,c)=>s+clientTotal(c),0);
+        const paidAll  = clients.reduce((s,c)=>s+clientPaid(c.clientId||c.uid),0);
+        const tc = {}; clients.forEach(c=>{const t=c.caseType||"EB-3";tc[t]=(tc[t]||0)+1;});
+        return (
+          <>
+            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:14}}>
+              <KPI label="Clientes Ativos" value={clients.length} color={T.gold}/>
+              <KPI label="Total Arrecadado" value={fmtUSD(paidAll)} color={T.green}/>
+              <KPI label="A Receber" value={fmtUSD(totalAll-paidAll)} color={T.amber}/>
+              <KPI label="Em Risco" value={atRisk.length} color={atRisk.length>0?T.red:T.dim}/>
+            </div>
             <Card>
-              <h4 style={{color:T.gold,margin:"0 0 14px"}}>Por Tipo de Processo</h4>
-              {Object.keys(tc).length===0?<div style={{color:T.faint}}>Nenhum cliente.</div>:Object.entries(tc).map(([tipo,qtd],i)=>(
-                <div key={tipo} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"11px 0",borderBottom:`1px solid ${T.border}`}}>
-                  <div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:10,height:10,borderRadius:2,background:colors[i%4]}}/><span style={{color:T.text,fontWeight:600}}>{tipo}</span></div>
-                  <div style={{textAlign:"right"}}><div style={{color:colors[i%4],fontSize:22,fontWeight:700}}>{qtd}</div><div style={{color:T.faint,fontSize:11}}>{clients.length>0?Math.round((qtd/clients.length)*100):0}%</div></div>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                <h4 style={{color:T.gold,margin:0}}>Progresso por Cliente</h4>
+                <Btn variant="ghost" onClick={printGeralAdmin} style={{padding:"6px 14px",fontSize:12}}>🖨 Imprimir</Btn>
+              </div>
+              {clients.map(c=>{
+                const paid=clientPaid(c.clientId||c.uid);
+                const total=clientTotal(c);
+                return <ProgRow key={c.uid} label={c.name?.split(" ").slice(0,2).join(" ")} value={paid} total={total} color={T.gold}/>;
+              })}
+              {clients.length===0&&<div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum cliente.</div>}
+            </Card>
+            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:14}}>
+              <Card>
+                <h4 style={{color:T.gold,margin:"0 0 14px"}}>Por Tipo de Processo</h4>
+                {Object.entries(tc).map(([tipo,qtd],i)=>(
+                  <div key={tipo} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:`1px solid ${T.border}`}}>
+                    <span style={{color:T.text,fontWeight:600}}>{tipo}</span>
+                    <div style={{textAlign:"right"}}>
+                      <span style={{color:[T.gold,T.blue,T.green,"#8B5CF6"][i%4],fontWeight:700,fontSize:18}}>{qtd}</span>
+                      <span style={{color:T.faint,fontSize:11,marginLeft:6}}>{clients.length>0?Math.round((qtd/clients.length)*100):0}%</span>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+              <Card>
+                <h4 style={{color:T.gold,margin:"0 0 14px"}}>Pagamentos Pendentes</h4>
+                {payments.filter(p=>p.status==="pending_review").length===0
+                  ? <div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum pendente.</div>
+                  : payments.filter(p=>p.status==="pending_review").map(p=>{
+                      const c=clients.find(cl=>(cl.clientId||cl.uid)===p.clientId);
+                      return (
+                        <div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:`1px solid ${T.border}`}}>
+                          <div>
+                            <div style={{color:T.text,fontSize:13,fontWeight:600}}>{c?.name?.split(" ")[0]||"—"}</div>
+                            <div style={{color:T.faint,fontSize:12}}>{p.description}</div>
+                          </div>
+                          <span style={{color:T.amber,fontWeight:700}}>{fmtUSD(p.amount)}</span>
+                        </div>
+                      );
+                    })
+                }
+              </Card>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── ADMIN: POR CLIENTE ── */}
+      {isAdmin&&tab==="cliente"&&(()=>{
+        const sel = clients.find(c=>(c.clientId||c.uid)===selClient);
+        const selPay = selClient==="all" ? [] : clientPay(selClient);
+        const selPaid = selPay.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
+        const selTotal = sel ? clientTotal(sel) : 0;
+        return (
+          <>
+            <Card>
+              <div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>Selecionar cliente</div>
+              <select value={selClient} onChange={e=>setSelClient(e.target.value)}
+                style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>
+                <option value="all" style={{background:"#0D1117"}}>— Selecione um cliente —</option>
+                {clients.map(c=><option key={c.uid||c.id} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name}</option>)}
+              </select>
+            </Card>
+            {sel&&(
+              <>
+                {/* Client header */}
+                <Card style={{background:"linear-gradient(135deg,rgba(200,169,110,0.12),rgba(232,200,122,0.05))",borderColor:"rgba(200,169,110,0.25)"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:12}}>
+                    <div>
+                      <div style={{color:T.text,fontWeight:700,fontSize:18,marginBottom:4}}>{sel.name}</div>
+                      <div style={{color:T.faint,fontSize:13}}>{sel.email}</div>
+                      <div style={{display:"flex",gap:8,marginTop:8}}>
+                        <span style={{padding:"2px 10px",borderRadius:99,fontSize:11,fontWeight:700,background:"rgba(232,200,122,0.15)",color:T.gold}}>{sel.caseType}</span>
+                        <span style={{padding:"2px 10px",borderRadius:99,fontSize:11,background:"rgba(255,255,255,0.08)",color:T.dim}}>{sel.sponsor}</span>
+                      </div>
+                    </div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                      <Btn variant="ghost" onClick={()=>printClientFinanceiro(sel)} style={{padding:"6px 12px",fontSize:12}}>💰 Financeiro</Btn>
+                      <Btn variant="ghost" onClick={()=>printClientProcesso(sel)} style={{padding:"6px 12px",fontSize:12}}>📋 Processo</Btn>
+                      <Btn variant="ghost" onClick={()=>printClientDocumentos(sel)} style={{padding:"6px 12px",fontSize:12}}>🪪 Documentos</Btn>
+                      <Btn onClick={()=>printClientCompleto(sel)} style={{padding:"6px 12px",fontSize:12}}>📄 Completo</Btn>
+                    </div>
+                  </div>
+                </Card>
+                <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:14}}>
+                  <KPI label="Total Pago" value={fmtUSD(selPaid)} color={T.green}/>
+                  <KPI label="Saldo Restante" value={fmtUSD(selTotal-selPaid)} color={T.amber}/>
+                  <KPI label="Progresso" value={`${Math.min(100,Math.round((selPaid/selTotal)*100))||0}%`} color={T.gold}/>
+                  <KPI label="Pagamentos" value={selPay.length} color={T.blue}/>
+                </div>
+                <Card>
+                  <h4 style={{color:T.gold,margin:"0 0 16px"}}>Histórico de Pagamentos</h4>
+                  {selPay.length===0
+                    ? <div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum pagamento.</div>
+                    : <table style={{width:"100%",borderCollapse:"collapse"}}>
+                        <thead><tr>{["Descrição","Data","Valor","Status","Comprovante"].map(h=><th key={h} style={{color:T.faint,fontSize:11,textTransform:"uppercase",padding:"8px 10px",textAlign:"left",borderBottom:`1px solid ${T.border}`}}>{h}</th>)}</tr></thead>
+                        <tbody>{selPay.map(p=>(
+                          <tr key={p.id} style={{borderTop:`1px solid rgba(255,255,255,0.05)`}}>
+                            <td style={{padding:"10px",color:T.text,fontSize:13,fontWeight:600}}>{p.description}</td>
+                            <td style={{padding:"10px",color:T.faint,fontSize:13}}>{fmt(p.date)}</td>
+                            <td style={{padding:"10px",color:T.gold,fontWeight:700}}>{fmtUSD(p.amount)}</td>
+                            <td style={{padding:"10px"}}>{p.status==="confirmed"?<span style={{color:T.green}}>✓</span>:p.status==="rejected"?<span style={{color:T.red}}>✗</span>:<span style={{color:T.amber}}>⏳</span>}</td>
+                            <td style={{padding:"10px"}}>{p.receiptUrl?<a href={p.receiptUrl} target="_blank" rel="noreferrer" style={{color:T.blue,fontSize:12}}>📎 Ver</a>:<span style={{color:T.faint,fontSize:12}}>—</span>}</td>
+                          </tr>
+                        ))}</tbody>
+                      </table>
+                  }
+                </Card>
+                <Card>
+                  <h4 style={{color:T.gold,margin:"0 0 14px"}}>Documentos</h4>
+                  <Row label="Passaporte" value={sel.documents?.passportNum||"—"}/>
+                  <Row label="Validade Passaporte" value={fmt(sel.documents?.passportExp)||"—"} color={sel.documents?.passportExp&&new Date(sel.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)?T.red:T.green}/>
+                  <Row label="Visto" value={`${sel.documents?.visaType||"—"} ${sel.documents?.visaNum||""}`}/>
+                  <Row label="Validade Visto" value={fmt(sel.documents?.visaExp)||"—"} color={sel.documents?.visaExp&&new Date(sel.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)?T.red:T.green}/>
+                  <Row label="I-94" value={sel.documents?.i94||"—"}/>
+                  <Row label="EAD" value={sel.documents?.eadNum||"—"}/>
+                  <Row label="A-Number" value={sel.documents?.aNumber||"—"}/>
+                </Card>
+              </>
+            )}
+          </>
+        );
+      })()}
+
+      {/* ── ADMIN: EM RISCO ── */}
+      {isAdmin&&tab==="risco"&&(
+        <>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div style={{color:T.dim,fontSize:13}}>{atRisk.length} cliente{atRisk.length!==1?"s":""} com documentos vencidos ou próximos do vencimento</div>
+            <Btn variant="ghost" onClick={printRisco} style={{padding:"6px 14px",fontSize:12}}>🖨 Imprimir</Btn>
+          </div>
+          {atRisk.length===0
+            ? <Card style={{textAlign:"center",padding:30}}><div style={{fontSize:36,marginBottom:10}}>✅</div><div style={{color:T.faint}}>Nenhum cliente em risco no momento.</div></Card>
+            : atRisk.map(c=>{
+                const v = c.documents?.visaExp;
+                const p = c.documents?.passportExp;
+                const now = Date.now();
+                return (
+                  <Card key={c.uid} style={{borderColor:"rgba(239,68,68,0.25)",background:"rgba(239,68,68,0.05)"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:8}}>
+                      <div>
+                        <div style={{color:T.text,fontWeight:700,fontSize:15}}>{c.name}</div>
+                        <div style={{color:T.faint,fontSize:12,marginTop:2}}>{c.email} · {c.caseType}</div>
+                      </div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        {v&&new Date(v)<new Date(now+90*24*60*60*1000)&&(
+                          <span style={{padding:"4px 12px",borderRadius:99,fontSize:12,fontWeight:700,background:new Date(v)<new Date()?"rgba(239,68,68,0.2)":"rgba(245,158,11,0.15)",color:new Date(v)<new Date()?T.red:T.amber}}>
+                            {new Date(v)<new Date()?"🚨":"⚠️"} Visto: {fmt(v)}
+                          </span>
+                        )}
+                        {p&&new Date(p)<new Date(now+180*24*60*60*1000)&&(
+                          <span style={{padding:"4px 12px",borderRadius:99,fontSize:12,fontWeight:700,background:new Date(p)<new Date()?"rgba(239,68,68,0.2)":"rgba(245,158,11,0.15)",color:new Date(p)<new Date()?T.red:T.amber}}>
+                            {new Date(p)<new Date()?"🚨":"⚠️"} Passaporte: {fmt(p)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })
+          }
+        </>
+      )}
+
+      {/* ── ADMIN: RECEITA ── */}
+      {isAdmin&&tab==="receita"&&(()=>{
+        const monthly = monthlyRevenue();
+        const max = Math.max(...monthly.map(([,v])=>v),1);
+        return (
+          <>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div style={{color:T.dim,fontSize:13}}>Últimos 6 meses de receita confirmada</div>
+              <Btn variant="ghost" onClick={printReceita} style={{padding:"6px 14px",fontSize:12}}>🖨 Imprimir</Btn>
+            </div>
+            <Card>
+              <h4 style={{color:T.gold,margin:"0 0 20px"}}>Receita Mensal</h4>
+              {monthly.length===0
+                ? <div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum dado disponível.</div>
+                : monthly.map(([m,v])=>(
+                    <div key={m} style={{marginBottom:14}}>
+                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+                        <span style={{color:T.dim,fontSize:13}}>{m}</span>
+                        <span style={{color:T.green,fontWeight:700}}>{fmtUSD(v)}</span>
+                      </div>
+                      <div style={{height:8,borderRadius:4,background:"rgba(255,255,255,0.08)"}}>
+                        <div style={{height:8,borderRadius:4,background:`linear-gradient(90deg,${T.goldDim},${T.gold})`,width:`${Math.round((v/max)*100)}%`}}/>
+                      </div>
+                    </div>
+                  ))
+              }
+            </Card>
+            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(3,1fr)",gap:14}}>
+              <KPI label="Total no Período" value={fmtUSD(monthly.reduce((s,[,v])=>s+v,0))} color={T.green}/>
+              <KPI label="Média Mensal" value={monthly.length>0?fmtUSD(monthly.reduce((s,[,v])=>s+v,0)/monthly.length):"—"} color={T.gold}/>
+              <KPI label="Melhor Mês" value={monthly.length>0?fmtUSD(Math.max(...monthly.map(([,v])=>v))):"—"} color={T.blue}/>
+            </div>
+          </>
+        );
+      })()}
+
+      {/* ── CLIENT: EXTRATO ── */}
+      {!isAdmin&&tab==="extrato"&&(
+        <>
+          <div style={{display:"flex",justifyContent:"flex-end"}}>
+            <Btn variant="ghost" onClick={printMyExtrato} style={{padding:"6px 14px",fontSize:12}}>🖨 Imprimir extrato</Btn>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:14}}>
+            <KPI label="Total Pago" value={fmtUSD(totalPago)} color={T.green}/>
+            <KPI label="Saldo Restante" value={fmtUSD(totalOwed-totalPago)} color={T.amber}/>
+            <KPI label="Progresso" value={`${pct}%`} color={T.gold}/>
+            <KPI label="Confirmados" value={confirmed.length} color={T.blue}/>
+          </div>
+          <Card>
+            <h4 style={{color:T.gold,margin:"0 0 16px"}}>Histórico Completo</h4>
+            {myPay.length===0
+              ? <div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum pagamento registrado.</div>
+              : <table style={{width:"100%",borderCollapse:"collapse"}}>
+                  <thead><tr>{["Descrição","Data","Valor","Status","Comprovante"].map(h=><th key={h} style={{color:T.faint,fontSize:11,textTransform:"uppercase",padding:"8px 10px",textAlign:"left",borderBottom:`1px solid ${T.border}`}}>{h}</th>)}</tr></thead>
+                  <tbody>{myPay.map(p=>(
+                    <tr key={p.id} style={{borderTop:`1px solid rgba(255,255,255,0.05)`}}>
+                      <td style={{padding:"10px",color:T.text,fontSize:13,fontWeight:600}}>{p.description}</td>
+                      <td style={{padding:"10px",color:T.faint,fontSize:13}}>{fmt(p.date)}</td>
+                      <td style={{padding:"10px",color:T.gold,fontWeight:700}}>{fmtUSD(p.amount)}</td>
+                      <td style={{padding:"10px"}}>{p.status==="confirmed"?<span style={{color:T.green}}>✓ Confirmado</span>:p.status==="rejected"?<span style={{color:T.red}}>✗ Rejeitado</span>:<span style={{color:T.amber}}>⏳ Revisão</span>}</td>
+                      <td style={{padding:"10px"}}>{p.receiptUrl?<a href={p.receiptUrl} target="_blank" rel="noreferrer" style={{color:T.blue,fontSize:12}}>📎 Ver</a>:<span style={{color:T.faint,fontSize:12}}>—</span>}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+            }
+          </Card>
+          {pending.length>0&&(
+            <Card style={{borderColor:"rgba(245,158,11,0.3)",background:"rgba(245,158,11,0.05)"}}>
+              <h4 style={{color:T.amber,margin:"0 0 12px"}}>⏳ {pending.length} comprovante{pending.length>1?"s":""} aguardando revisão</h4>
+              {pending.map(p=>(
+                <div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:`1px solid rgba(245,158,11,0.15)`}}>
+                  <span style={{color:T.dim,fontSize:13}}>{p.description} · {fmt(p.date)}</span>
+                  <span style={{color:T.amber,fontWeight:700}}>{fmtUSD(p.amount)}</span>
                 </div>
               ))}
             </Card>
-            <Card>
-              <h4 style={{color:T.gold,margin:"0 0 14px"}}>Lista de Clientes</h4>
-              {clients.map(c=><div key={c.uid} style={{padding:"10px 0",borderBottom:`1px solid ${T.border}`}}><div style={{display:"flex",gap:8,alignItems:"center"}}><span style={{color:T.text,fontWeight:600,fontSize:13}}>{c.name?.split(" ").slice(0,2).join(" ")}</span><Pill>{c.caseType||"EB-3"}</Pill></div><div style={{color:T.faint,fontSize:12,marginTop:2}}>{c.email}</div></div>)}
-              {clients.length===0&&<div style={{color:T.faint}}>Nenhum cliente.</div>}
-            </Card>
+          )}
+        </>
+      )}
+
+      {/* ── CLIENT: PROCESSO ── */}
+      {!isAdmin&&tab==="processo"&&(
+        <>
+          <div style={{display:"flex",justifyContent:"flex-end"}}>
+            <Btn variant="ghost" onClick={printMyProcesso} style={{padding:"6px 14px",fontSize:12}}>🖨 Imprimir</Btn>
           </div>
-        </>;
-      })()}
+          <Card style={{background:"linear-gradient(135deg,rgba(200,169,110,0.12),rgba(232,200,122,0.05))",borderColor:"rgba(200,169,110,0.25)"}}>
+            <Row label="Tipo de Processo" value={myClient?.caseType||user.caseType||"—"} color={T.gold}/>
+            <Row label="Sponsor" value={myClient?.sponsor||user.sponsor||"—"}/>
+            <Row label="Priority Date" value={fmt(myClient?.priorityDate||user.priorityDate)||"—"}/>
+            <Row label="E-mail" value={user.email}/>
+          </Card>
+          <Card>
+            <h4 style={{color:T.gold,margin:"0 0 14px"}}>Protocolos</h4>
+            {[["PERM (DOL)", myClient?.protocols?.perm||user.protocols?.perm],["I-140 (USCIS)", myClient?.protocols?.i140||user.protocols?.i140],["I-485 (USCIS)", myClient?.protocols?.i485||user.protocols?.i485],["NVC", myClient?.protocols?.nvc||user.protocols?.nvc]].map(([label,val])=>(
+              <Row key={label} label={label} value={val||"—"} color={val?T.text:T.faint}/>
+            ))}
+          </Card>
+        </>
+      )}
+
+      {/* ── CLIENT: DOCUMENTOS ── */}
+      {!isAdmin&&tab==="docs"&&(
+        <>
+          <div style={{display:"flex",justifyContent:"flex-end"}}>
+            <Btn variant="ghost" onClick={printMyDocumentos} style={{padding:"6px 14px",fontSize:12}}>🖨 Imprimir</Btn>
+          </div>
+          <Card>
+            <h4 style={{color:T.gold,margin:"0 0 14px"}}>🛂 Passaporte</h4>
+            <Row label="Número" value={myClient?.documents?.passportNum||"—"}/>
+            <Row label="Validade" value={fmt(myClient?.documents?.passportExp)||"—"} color={myClient?.documents?.passportExp&&new Date(myClient.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)?T.red:T.green}/>
+            {myClient?.documents?.passportExp&&new Date(myClient.documents.passportExp)<new Date(Date.now()+180*24*60*60*1000)&&(
+              <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,marginTop:10,color:T.red,fontSize:13}}>⚠️ Passaporte vence em menos de 6 meses — providencie a renovação!</div>
+            )}
+          </Card>
+          <Card>
+            <h4 style={{color:T.gold,margin:"0 0 14px"}}>🇺🇸 Visto Atual</h4>
+            <Row label="Tipo" value={myClient?.documents?.visaType||"—"}/>
+            <Row label="Número" value={myClient?.documents?.visaNum||"—"}/>
+            <Row label="Validade" value={fmt(myClient?.documents?.visaExp)||"—"} color={myClient?.documents?.visaExp&&new Date(myClient.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)?T.red:T.green}/>
+            <Row label="Entrada nos EUA" value={fmt(myClient?.documents?.entryDate)||"—"}/>
+            <Row label="I-94" value={myClient?.documents?.i94||"—"}/>
+            {myClient?.documents?.visaExp&&new Date(myClient.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)&&(
+              <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,marginTop:10,color:T.red,fontSize:13}}>⚠️ Visto vence em menos de 90 dias — entre em contato com a Zion Solutions!</div>
+            )}
+          </Card>
+          <Card>
+            <h4 style={{color:T.gold,margin:"0 0 14px"}}>📄 Outros</h4>
+            <Row label="EAD" value={myClient?.documents?.eadNum||"—"}/>
+            <Row label="Validade EAD" value={fmt(myClient?.documents?.eadExp)||"—"}/>
+            <Row label="A-Number" value={myClient?.documents?.aNumber||"—"}/>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
@@ -3983,7 +4410,7 @@ function ClientProfile({user, clients, setClients, mobile}) {
       case "clients":   return <Clients   {...sharedProps}/>;
       case "users":     return <Users     mobile={mobile}/>;
       case "jobs":      return <Jobs      mobile={mobile}/>;
-      case "reports":   return <Reports   {...sharedProps}/>;
+      case "reports":   return <Reports   {...sharedProps} caseStatus={caseStatus}/>;
       case "devpanel":  return <DevPanel  payments={payments} clients={clients} messages={messages} mobile={mobile}/>;
       case "profile":   return <ClientProfile user={user} clients={clients} setClients={setClients} mobile={mobile}/>;
       case "more":      return <More user={user} setActive={setActive} onLogout={logout}/>;
