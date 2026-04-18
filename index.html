@@ -898,9 +898,9 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 function PaymentStatementModal({open, onClose, payments, client, mobile}) {
   const all = (payments || []).filter(p => p.status === "confirmed");
-  const [selected, setSelected] = React.useState([]);
-  const [generating, setGenerating] = React.useState(false);
-  React.useEffect(() => { if (open) setSelected(all.map(p => p.id)); }, [open, (payments||[]).length]);
+  const [selected, setSelected] = useState([]);
+  const [generating, setGenerating] = useState(false);
+  useEffect(() => { if (open) setSelected((payments||[]).filter(p=>p.status==="confirmed").map(p=>p.id)); }, [open, payments]);
   const toggle = (id) => setSelected(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id]);
   const toggleAll = () => setSelected(selected.length===all.length ? [] : all.map(p=>p.id));
 
