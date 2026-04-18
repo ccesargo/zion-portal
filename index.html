@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260417165957 -->
+  <!-- build:20260418034758 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -990,10 +990,27 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
       <Card>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14,flexWrap:"wrap",gap:10}}>
           <h3 style={{color:T.gold,margin:0,fontSize:15}}>Histórico Completo</h3>
-          <select value={filterId} onChange={e=>setFilterId(e.target.value)} style={{padding:"7px 12px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:9,color:T.text,fontSize:13,fontFamily:"Georgia,serif"}}>
-            <option value="all" style={{background:"#0D1117"}}>Todos os clientes</option>
-            {clients.map(c=><option key={c.uid} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name?.split(" ")[0]}</option>)}
-          </select>
+          <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            <select value={filterId} onChange={e=>setFilterId(e.target.value)} style={{padding:"7px 12px",background:"rgba(255,255,255,0.07)",border:`1px solid ${T.border}`,borderRadius:9,color:T.text,fontSize:13,fontFamily:"Georgia,serif"}}>
+              <option value="all" style={{background:"#0D1117"}}>Todos os clientes</option>
+              {clients.map(c=><option key={c.uid} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name?.split(" ")[0]}</option>)}
+            </select>
+            <Btn variant="ghost" onClick={()=>{
+              const rows=visible.map(p=>{
+                const cl=clients.find(c=>(c.clientId||c.uid)===p.clientId);
+                const st=p.status==="confirmed"?"Confirmado":p.status==="rejected"?"Rejeitado":"Revisão";
+                const link=p.receiptUrl?"<a href='"+p.receiptUrl+"'>Ver</a>":"—";
+                return "<tr><td>"+(cl?.name?.split(" ")[0]||"—")+"</td><td>"+p.description+"</td><td>"+fmt(p.date)+"</td><td>"+fmtUSD(p.amount)+"</td><td>"+st+"</td><td>"+link+"</td></tr>";
+              }).join("");
+              const totalConf=visible.filter(p=>p.status==="confirmed").reduce((s,p)=>s+p.amount,0);
+              const html="<div style='margin-bottom:20px'>"
+                +"<div class='kpi'><div class='kpi-val'>"+fmtUSD(totalConf)+"</div><div class='kpi-lbl'>Total Confirmado</div></div>"
+                +"<div class='kpi'><div class='kpi-val'>"+visible.filter(p=>p.status==="confirmed").length+"</div><div class='kpi-lbl'>Confirmados</div></div>"
+                +"<div class='kpi'><div class='kpi-val'>"+visible.filter(p=>p.status==="pending_review").length+"</div><div class='kpi-lbl'>Em Revisão</div></div>"
+                +"</div><table><tr><th>Cliente</th><th>Descrição</th><th>Data</th><th>Valor</th><th>Status</th><th>Comprovante</th></tr>"+rows+"</table>";
+              printReport("Histórico de Pagamentos"+(filterId!=="all"?" — "+(clients.find(c=>(c.clientId||c.uid)===filterId)?.name||""):""), html);
+            }} style={{padding:"6px 14px",fontSize:12}}>🖨</Btn>
+          </div>
         </div>
         {visible.length===0
           ? <div style={{color:T.faint,textAlign:"center",padding:20}}>Nenhum pagamento.</div>
@@ -3012,11 +3029,26 @@ function Reports({user,payments,clients,caseStatus,mobile}) {
             )}
           </Card>
           <Card>
-            <h4 style={{color:T.gold,margin:"0 0 14px"}}>📄 Outros</h4>
+            <h4 style={{color:T.gold,margin:"0 0 14px"}}>📄 Outros Documentos</h4>
             <Row label="EAD" value={myClient?.documents?.eadNum||"—"}/>
             <Row label="Validade EAD" value={fmt(myClient?.documents?.eadExp)||"—"}/>
             <Row label="A-Number" value={myClient?.documents?.aNumber||"—"}/>
+            {myClient?.documents?.i20Num&&<><Row label="I-20 Número" value={myClient.documents.i20Num}/><Row label="Escola (I-20)" value={myClient.documents.i20School||"—"}/><Row label="Válido até" value={fmt(myClient.documents.i20End)||"—"}/></>}
           </Card>
+          {Array.isArray(myClient?.documents?.visaHistory)&&myClient.documents.visaHistory.length>0&&(
+            <Card>
+              <h4 style={{color:T.gold,margin:"0 0 14px"}}>📜 Histórico de Status Imigratório</h4>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+                {myClient.documents.visaHistory.map((h,i)=>(
+                  <div key={i} style={{padding:"6px 14px",borderRadius:10,background:h.isCurrent?"rgba(16,185,129,0.12)":"rgba(255,255,255,0.06)",border:"1px solid "+(h.isCurrent?"rgba(16,185,129,0.3)":"rgba(255,255,255,0.1)")}}>
+                    <div style={{color:h.isCurrent?T.green:T.text,fontWeight:600,fontSize:13}}>{h.type}</div>
+                    <div style={{color:T.faint,fontSize:11,marginTop:2}}>{h.dateFrom||"—"}{h.dateTo?" → "+h.dateTo:h.isCurrent?" → atual":""}</div>
+                    {h.notes&&<div style={{color:T.dim,fontSize:11,marginTop:2}}>{h.notes}</div>}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </>
       )}
     </div>
@@ -4145,6 +4177,113 @@ function App() {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CLIENT PROFILE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// VISA HISTORY EDITOR
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const VISA_TYPES_ALL = ["B-1/B-2","F-1","F-2","J-1","H-1B","H-4","L-1","O-1","TN","E-2","EB-1","EB-2","EB-3","EAD","Green Card","Outro"];
+const STATUS_LABELS = {
+  "B-1/B-2": "Turista / Negócios",
+  "F-1":     "Estudante",
+  "F-2":     "Dependente de Estudante",
+  "J-1":     "Intercâmbio",
+  "H-1B":    "Trabalho Especializado",
+  "H-4":     "Dependente H-1B",
+  "L-1":     "Transferência Intraempresarial",
+  "O-1":     "Habilidade Extraordinária",
+  "TN":      "Profissional NAFTA/USMCA",
+  "E-2":     "Investidor",
+  "EB-1":    "Green Card EB-1",
+  "EB-2":    "Green Card EB-2",
+  "EB-3":    "Green Card EB-3",
+  "EAD":     "Autorização de Trabalho",
+  "Green Card": "Residente Permanente",
+  "Outro":   "Outro",
+};
+
+function VisaHistoryEditor({history, setHistory, mobile}) {
+  const add = () => setHistory(p=>[...p, {type:"B-1/B-2",num:"",dateFrom:"",dateTo:"",notes:"",isCurrent:false}]);
+  const upd = (i,k,v) => { const a=[...history]; a[i]={...a[i],[k]:v}; setHistory(a); };
+  const rem = (i) => setHistory(history.filter((_,j)=>j!==i));
+
+  return (
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+        <div style={{color:T.faint,fontSize:13}}>Adicione cada visto ou mudança de status na ordem cronológica</div>
+        <Btn onClick={add} style={{padding:"7px 14px",fontSize:12}}>+ Adicionar</Btn>
+      </div>
+
+      {history.length===0&&(
+        <div style={{textAlign:"center",padding:"24px 0",color:T.faint,fontSize:13}}>
+          <div style={{fontSize:28,marginBottom:8}}>📜</div>
+          Nenhum histórico adicionado.<br/>
+          <span style={{fontSize:12}}>Ex: B-1/B-2 (entrada) → F-1 (mudança de status) → EB-3 (processo atual)</span>
+        </div>
+      )}
+
+      {/* Timeline visual */}
+      {history.length>0&&(
+        <div style={{marginBottom:16,padding:"12px 16px",background:"rgba(96,165,250,0.06)",border:"1px solid rgba(96,165,250,0.15)",borderRadius:12}}>
+          <div style={{color:T.blue,fontSize:12,fontWeight:600,marginBottom:10}}>📅 Timeline</div>
+          <div style={{display:"flex",alignItems:"center",gap:0,overflowX:"auto",paddingBottom:4}}>
+            {history.map((h,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",flexShrink:0}}>
+                <div style={{textAlign:"center"}}>
+                  <div style={{padding:"4px 10px",borderRadius:99,fontSize:11,fontWeight:700,
+                    background:h.isCurrent?"rgba(16,185,129,0.2)":"rgba(255,255,255,0.08)",
+                    color:h.isCurrent?T.green:T.dim,border:"1px solid "+(h.isCurrent?"rgba(16,185,129,0.4)":"rgba(255,255,255,0.1)")}}>
+                    {h.type}
+                  </div>
+                  <div style={{color:T.faint,fontSize:10,marginTop:3}}>{h.dateFrom||"—"}</div>
+                </div>
+                {i<history.length-1&&<div style={{width:24,height:2,background:"rgba(255,255,255,0.15)",flexShrink:0,margin:"0 4px"}}/>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {history.map((h,i)=>(
+        <div key={i} style={{marginBottom:14,padding:16,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{padding:"3px 10px",borderRadius:99,fontSize:12,fontWeight:700,
+                background:h.isCurrent?"rgba(16,185,129,0.15)":"rgba(232,200,122,0.12)",
+                color:h.isCurrent?T.green:T.gold}}>
+                {h.type}
+              </span>
+              <span style={{color:T.faint,fontSize:12}}>{STATUS_LABELS[h.type]||""}</span>
+            </div>
+            <button onClick={()=>rem(i)} style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:7,color:T.red,fontSize:12,cursor:"pointer",padding:"4px 10px",fontFamily:"Georgia,serif"}}>Remover</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"1fr 1fr 1fr",gap:12}}>
+            <div style={{marginBottom:0}}>
+              <div style={{color:"rgba(255,255,255,0.7)",fontSize:12,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:7,fontWeight:600}}>Tipo de Status</div>
+              <select value={h.type} onChange={e=>upd(i,"type",e.target.value)}
+                style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}>
+                {VISA_TYPES_ALL.map(v=><option key={v} value={v} style={{background:"#0D1117"}}>{v} — {STATUS_LABELS[v]||v}</option>)}
+              </select>
+            </div>
+            <FInp label="Número do visto/doc" value={h.num} onChange={e=>upd(i,"num",e.target.value)} placeholder="Ex: V0000000"/>
+            <FInp label="Data de início" type="date" value={h.dateFrom} onChange={e=>upd(i,"dateFrom",e.target.value)}/>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"1fr 1fr 1fr",gap:12,marginTop:0}}>
+            <FInp label="Data de término" type="date" value={h.dateTo} onChange={e=>upd(i,"dateTo",e.target.value)}/>
+            <FInp label="Observações" value={h.notes} onChange={e=>upd(i,"notes",e.target.value)} placeholder="Ex: Mudança de status aprovada"/>
+            <div style={{display:"flex",alignItems:"flex-end",paddingBottom:16}}>
+              <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                <input type="checkbox" checked={h.isCurrent} onChange={e=>upd(i,"isCurrent",e.target.checked)}
+                  style={{width:18,height:18,accentColor:T.green,cursor:"pointer"}}/>
+                <span style={{color:T.dim,fontSize:13}}>Status atual</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ClientProfile({user, clients, setClients, mobile}) {
   const isAdmin = user.role==="admin"||user.role==="developer";
   const [tab, setTab] = useState("pessoal");
@@ -4169,8 +4308,10 @@ function ClientProfile({user, clients, setClients, mobile}) {
     passportNum:"", passportExp:"",
     visaType:"", visaNum:"", visaExp:"", entryDate:"", i94:"",
     eadNum:"", eadExp:"", aNumber:"",
+    i20Num:"", i20School:"", i20Start:"", i20End:"",
     currentEmployer:"", currentRole:"", employmentStart:"", salary:"", prevEmployers:"",
   });
+  const [visaHistory, setVisaHistory] = useState([]);
 
   // Load client data into form
   useEffect(()=>{
@@ -4199,12 +4340,17 @@ function ClientProfile({user, clients, setClients, mobile}) {
       eadNum:         c.documents?.eadNum||"",
       eadExp:         c.documents?.eadExp||"",
       aNumber:        c.documents?.aNumber||"",
+      i20Num:         c.documents?.i20Num||"",
+      i20School:      c.documents?.i20School||"",
+      i20Start:       c.documents?.i20Start||"",
+      i20End:         c.documents?.i20End||"",
       currentEmployer: c.employment?.currentEmployer||"",
       currentRole:    c.employment?.currentRole||"",
       employmentStart: c.employment?.employmentStart||"",
       salary:         c.employment?.salary||"",
       prevEmployers:  c.employment?.prevEmployers||"",
     });
+    setVisaHistory(Array.isArray(c.documents?.visaHistory) ? c.documents.visaHistory : []);
   },[clientToView?.uid, clientToView?.id, selectedClient]);
 
   const savePersonal = async () => {
@@ -4224,6 +4370,8 @@ function ClientProfile({user, clients, setClients, mobile}) {
           visaType:form.visaType, visaNum:form.visaNum, visaExp:form.visaExp,
           entryDate:form.entryDate, i94:form.i94,
           eadNum:form.eadNum, eadExp:form.eadExp, aNumber:form.aNumber,
+          i20Num:form.i20Num, i20School:form.i20School, i20Start:form.i20Start, i20End:form.i20End,
+          visaHistory: visaHistory,
         },
         employment: {
           currentEmployer:form.currentEmployer, currentRole:form.currentRole,
@@ -4375,6 +4523,22 @@ function ClientProfile({user, clients, setClients, mobile}) {
                 <FInp label="EAD Validade" type="date" value={f("eadExp")} onChange={s("eadExp")}/>
               </div>
               <FInp label="A-Number (Alien Registration)" value={f("aNumber")} onChange={s("aNumber")} placeholder="A000000000"/>
+
+              {/* I-20 Section */}
+              <Section icon="🎓" label="Formulário I-20 (Estudante F-1)"/>
+              <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:12}}>
+                <FInp label="Número do I-20" value={f("i20Num")} onChange={s("i20Num")} placeholder="N00000000000"/>
+                <FInp label="Escola / Universidade" value={f("i20School")} onChange={s("i20School")} placeholder="Ex: Boston University"/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"1fr 1fr",gap:12}}>
+                <FInp label="Data de início do programa" type="date" value={f("i20Start")} onChange={s("i20Start")}/>
+                <FInp label="Data de término do programa" type="date" value={f("i20End")} onChange={s("i20End")}/>
+              </div>
+
+              {/* Visa History */}
+              <Section icon="📜" label="Histórico de Status Imigratório"/>
+              <VisaHistoryEditor history={visaHistory} setHistory={setVisaHistory} mobile={mobile}/>
+
               {msg&&<div style={{padding:"10px 14px",background:msg.type==="success"?"rgba(16,185,129,0.12)":"rgba(239,68,68,0.12)",border:`1px solid ${msg.type==="success"?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`,borderRadius:10,color:msg.type==="success"?T.green:T.red,fontSize:13,marginBottom:14}}>{msg.text}</div>}
               <Btn onClick={savePersonal} disabled={saving} style={{width:"100%",marginTop:4}}>{saving?"Salvando…":"💾 Salvar documentos"}</Btn>
             </Card>
