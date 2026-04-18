@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260418034758 -->
+  <!-- build:20260418190000 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>Zion Solutions — Portal do Cliente</title>
@@ -143,10 +143,10 @@ const DEVELOPER = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // VERSÃO E CHANGELOG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.0.2";
 const CHANGELOG = [
   {
-    version: "2.0.0",
+    version": "2.0.2",
     date: "16/04/2026",
     changes: [
       "Relatórios completos: Geral, Por Cliente, Em Risco e Receita Mensal para admin",
@@ -892,6 +892,123 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PAYMENTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// PAYMENT STATEMENT MODAL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function PaymentStatementModal({open, onClose, payments, client, mobile}) {
+  const all = (payments || []).filter(p => p.status === "confirmed");
+  const [selected, setSelected] = React.useState([]);
+  const [generating, setGenerating] = React.useState(false);
+  React.useEffect(() => { if (open) setSelected(all.map(p => p.id)); }, [open, (payments||[]).length]);
+  const toggle = (id) => setSelected(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id]);
+  const toggleAll = () => setSelected(selected.length===all.length ? [] : all.map(p=>p.id));
+
+  const generate = () => {
+    const chosen = all.filter(p=>selected.includes(p.id));
+    if (!chosen.length) return;
+    setGenerating(true);
+    const totalSel = chosen.reduce((s,p)=>s+p.amount,0);
+    const totalAll = all.reduce((s,p)=>s+p.amount,0);
+    const planTotal = client?.plan?.total||0;
+    const remaining = Math.max(0, planTotal - totalAll);
+    const m = n=>"$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2});
+    const rows = chosen.map(p=>{
+      const d = !p.date?"—":new Date(p.date+"T12:00:00").toLocaleDateString("pt-BR");
+      const r = p.receiptUrl?"<a href='"+p.receiptUrl+"' style='color:#1d4ed8;font-size:11px'>📎 Ver</a>":"—";
+      return "<tr><td>"+(p.description||"—")+"</td><td>"+d+"</td><td style='text-align:right;font-weight:700;color:#15803d'>"+m(p.amount)+"</td><td style='text-align:center'>"+r+"</td></tr>";
+    }).join("");
+    const html=(
+      "<div style='background:#fdf6e3;border:1px solid #e5d5b0;border-radius:12px;padding:18px 22px;margin-bottom:24px'>"+
+        "<table style='width:100%;border:none;margin:0'>"+
+          "<tr><td style='border:none;padding:3px 0;color:#888;font-size:12px;width:120px'>Cliente</td><td style='border:none;padding:3px 0;font-weight:600;color:#111'>"+(client?.name||"—")+"</td></tr>"+
+          (client?.caseType?"<tr><td style='border:none;padding:3px 0;color:#888;font-size:12px'>Processo</td><td style='border:none;padding:3px 0;color:#5a4a1a'>"+client.caseType+"</td></tr>":"")+
+          (client?.sponsor?"<tr><td style='border:none;padding:3px 0;color:#888;font-size:12px'>Patrocinador</td><td style='border:none;padding:3px 0;color:#5a4a1a'>"+client.sponsor+"</td></tr>":"")+
+        "</table>"+
+      "</div>"+
+      "<div style='display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap'>"+
+        "<div class='kpi'><div class='kpi-val'>"+m(totalSel)+"</div><div class='kpi-lbl'>Total Selecionado</div></div>"+
+        "<div class='kpi'><div class='kpi-val'>"+chosen.length+"</div><div class='kpi-lbl'>Pagamento(s)</div></div>"+
+        (planTotal>0?"<div class='kpi'><div class='kpi-val'>"+m(remaining)+"</div><div class='kpi-lbl'>Saldo Restante</div></div>":"")+
+      "</div>"+
+      "<table>"+
+        "<tr><th>Descrição</th><th>Data</th><th style='text-align:right'>Valor</th><th style='text-align:center'>Comprovante</th></tr>"+
+        rows+
+        "<tr style='border-top:2px solid #C8A96E'>"+
+          "<td colspan='2' style='font-weight:700;color:#5a4a1a;padding-top:12px'>TOTAL</td>"+
+          "<td style='text-align:right;font-weight:700;font-size:16px;color:#15803d;padding-top:12px'>"+m(totalSel)+"</td>"+
+          "<td></td>"+
+        "</tr>"+
+      "</table>"
+    );
+    printReport("Extrato de Pagamentos — "+(client?.name||"Cliente"), html);
+    setTimeout(()=>{setGenerating(false);onClose();},300);
+  };
+
+  if (!open) return null;
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:16}}>
+      <div style={{background:"#0D1117",border:"1px solid rgba(232,200,122,0.25)",borderRadius:20,width:"100%",maxWidth:540,maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+        <div style={{padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+          <div>
+            <div style={{color:T.gold,fontWeight:700,fontSize:16}}>📄 Extrato de Pagamentos</div>
+            <div style={{color:T.faint,fontSize:12,marginTop:2}}>{client?.name||"Cliente"}</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:T.faint,fontSize:24,cursor:"pointer",padding:"0 6px",lineHeight:1}}>×</button>
+        </div>
+        <div style={{padding:"16px 20px",overflowY:"auto",flex:1}}>
+          {all.length===0 ? (
+            <div style={{textAlign:"center",padding:"32px 0",color:T.faint,fontSize:14}}>
+              <div style={{fontSize:32,marginBottom:10}}>💳</div>
+              Nenhum pagamento confirmado para exibir.
+            </div>
+          ) : (
+            <>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,padding:"9px 12px",background:"rgba(232,200,122,0.06)",borderRadius:10,border:"1px solid rgba(232,200,122,0.15)"}}>
+                <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
+                  <input type="checkbox" checked={selected.length===all.length&&all.length>0} onChange={toggleAll}
+                    style={{width:16,height:16,accentColor:T.gold,cursor:"pointer"}}/>
+                  <span style={{color:T.dim,fontSize:13,fontWeight:600}}>Selecionar todos ({all.length})</span>
+                </label>
+                <span style={{color:T.green,fontWeight:700,fontSize:13}}>
+                  {"$"+Number(all.filter(p=>selected.includes(p.id)).reduce((s,p)=>s+p.amount,0)).toLocaleString("en-US",{minimumFractionDigits:2})}
+                </span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                {all.map(p=>{
+                  const isSel=selected.includes(p.id);
+                  const d=!p.date?"—":new Date(p.date+"T12:00:00").toLocaleDateString("pt-BR");
+                  return (
+                    <label key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:isSel?"rgba(16,185,129,0.08)":"rgba(255,255,255,0.03)",border:"1px solid "+(isSel?"rgba(16,185,129,0.25)":"rgba(255,255,255,0.07)"),borderRadius:12,cursor:"pointer"}}>
+                      <input type="checkbox" checked={isSel} onChange={()=>toggle(p.id)}
+                        style={{width:16,height:16,accentColor:T.green,cursor:"pointer",flexShrink:0}}/>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{color:T.text,fontWeight:600,fontSize:13}}>{p.description}</div>
+                        <div style={{color:T.faint,fontSize:11,marginTop:2}}>{d}</div>
+                      </div>
+                      <div style={{color:T.green,fontWeight:700,fontSize:14,flexShrink:0}}>
+                        {"$"+Number(p.amount||0).toLocaleString("en-US",{minimumFractionDigits:2})}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+        {all.length>0&&(
+          <div style={{padding:"14px 20px",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",gap:10,flexShrink:0}}>
+            <Btn onClick={generate} disabled={generating||selected.length===0} style={{flex:1}}>
+              {generating?"Gerando…":"📥 Gerar PDF ("+(selected.length)+")"}
+            </Btn>
+            <Btn variant="ghost" onClick={onClose} style={{flex:1}}>Cancelar</Btn>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Payments({user,payments,addPayment,updatePayment,deletePayment,clients,mobile}) {
   const isAdmin=user.role==="admin";
   return isAdmin
@@ -903,6 +1020,7 @@ function Payments({user,payments,addPayment,updatePayment,deletePayment,clients,
 function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
   const [filterId,setFilterId] = useState("all");
   const [confirmDel,setConfirmDel] = useState(null); // pagamento a deletar
+  const [stmtClient,setStmtClient]   = useState(null); // extrato por cliente
   const change = async(id,status) => await updatePayment(id,status);
 
   const pending   = payments.filter(p=>p.status==="pending_review");
@@ -996,6 +1114,11 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
               {clients.map(c=><option key={c.uid} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name?.split(" ")[0]}</option>)}
             </select>
             <Btn variant="ghost" onClick={()=>{
+              const cl=filterId==="all"?null:clients.find(c=>(c.clientId||c.uid)===filterId);
+              const pays=filterId==="all"?payments:payments.filter(p=>p.clientId===filterId);
+              setStmtClient({client:cl,pays});
+            }} style={{padding:"6px 14px",fontSize:12}} title="Gerar extrato">📄</Btn>
+            <Btn variant="ghost" onClick={()=>{
               const rows=visible.map(p=>{
                 const cl=clients.find(c=>(c.clientId||c.uid)===p.clientId);
                 const st=p.status==="confirmed"?"Confirmado":p.status==="rejected"?"Rejeitado":"Revisão";
@@ -1048,6 +1171,13 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
       </Card>
 
       {/* Modal confirmar exclusão */}
+      <PaymentStatementModal
+        open={!!stmtClient}
+        onClose={()=>setStmtClient(null)}
+        payments={stmtClient?.pays||[]}
+        client={stmtClient?.client}
+        mobile={mobile}/>
+
       {confirmDel&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
           <Card style={{width:440,maxWidth:"100%"}}>
@@ -1074,6 +1204,7 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
 // ── Cliente: plano com progresso automático + enviar comprovante ─────────────
 function PaymentsClient({user,payments,addPayment,clients,mobile}) {
   const [open,setOpen]         = useState(false);
+  const [stmtOpen,setStmtOpen] = useState(false);
   const [uploading,setUploading] = useState(false);
   const [selectedOption,setSelectedOption] = useState(null);
   const [receiptUrl,setReceiptUrl] = useState("");
@@ -1277,7 +1408,10 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
 
       {/* Histórico */}
       <Card>
-        <h3 style={{color:T.gold,margin:"0 0 14px",fontSize:15}}>Histórico de Pagamentos</h3>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+          <h3 style={{color:T.gold,margin:0,fontSize:15}}>Histórico de Pagamentos</h3>
+          <Btn variant="ghost" onClick={()=>setStmtOpen(true)} style={{padding:"6px 14px",fontSize:12}}>📄 Extrato</Btn>
+        </div>
         {myPay.length===0
           ? <div style={{color:T.faint,textAlign:"center",padding:20,fontSize:13}}>Nenhum pagamento registrado.<br/><span style={{fontSize:12}}>Envie um comprovante para começar.</span></div>
           : <div style={{display:"flex",flexDirection:"column",gap:0}}>
@@ -1363,6 +1497,13 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
           <Btn variant="ghost" onClick={()=>{setOpen(false);setSelectedOption(null);setReceiptUrl("");setCustomAmount("");}} style={{flex:1}}>Cancelar</Btn>
         </div>
       </Overlay>
+
+      <PaymentStatementModal
+        open={stmtOpen}
+        onClose={()=>setStmtOpen(false)}
+        payments={myPay}
+        client={clientData}
+        mobile={mobile}/>
     </div>
   );
 }
@@ -3952,229 +4093,6 @@ function DevPanel({payments,clients,messages,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // APP ROOT — Firebase
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function App() {
-  // ── Páginas públicas ─────────────────────────────
-  const params = typeof window!=="undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  if (params.get("public")==="jobs")    return <PublicJobs/>;
-  if (params.get("public")==="privacy") return <PrivacyPolicy/>;
-
-  const mobile = useIsMobile();
-  const [user,setUser]             = useState(null);
-  const [authLoading,setAuthLoading] = useState(true);
-  const [active,setActive]         = useState("dashboard");
-  const [messages,setMessages]     = useState([]);
-  const [payments,setPayments]     = useState([]);
-  const [caseStatus,setCaseStatus] = useState([]);
-  const [bulletin,setBulletin]     = useState(DEFAULT_BULLETIN);
-  const [clients,setClients]       = useState([]);
-
-  // ── Verificar sessão ao montar ───────────────────
-  useEffect(()=>{
-    // Timeout de segurança — nunca fica travado mais de 8 segundos
-    const timeout = setTimeout(()=>setAuthLoading(false), 8000);
-    initFirebase().then(()=>{
-      _auth.onAuthStateChanged(_auth.inst, async fbUser => {
-        clearTimeout(timeout);
-        if (fbUser) {
-          try {
-            const doc = await dbGet("users", fbUser.uid);
-            if (doc) setUser({ uid: fbUser.uid, ...doc });
-          } catch(e) {
-            console.error("Erro ao carregar perfil:", e);
-          }
-        }
-        setAuthLoading(false);
-      });
-    }).catch(()=>setAuthLoading(false));
-  },[]);
-
-  // ── Carregar dados após login ────────────────────
-  useEffect(()=>{
-    if (!user || !_db) return;
-    const isAdmin = user.role==="admin";
-    const isDev   = user.role==="developer";
-    const unsubs = [];
-
-    if (isAdmin || isDev) {
-      // Admin/Developer: escuta todos os dados em tempo real
-      unsubs.push(dbListen("messages",  setMessages));
-      unsubs.push(dbListen("payments",  setPayments));
-      // Use real-time listener for clients to get driveFolderId updates
-      unsubs.push(dbListen("users", setClients, _db.where("role","==","client")));
-    } else {
-      // Cliente: escuta apenas seus próprios dados
-      const cid = user.clientId || user.uid;
-      unsubs.push(dbListen("messages", setMessages, _db.where("clientId","==",cid)));
-      unsubs.push(dbListen("payments", setPayments, _db.where("clientId","==",cid)));
-      dbGet("caseStatus", cid).then(d => setCaseStatus(d?.stages || DEFAULT_CASE));
-    }
-
-    // Bulletin (compartilhado)
-    dbGet("bulletin","current").then(d => { if(d) setBulletin(d); });
-
-    return () => unsubs.forEach(u=>u());
-  },[user]);
-
-  const logout = async () => {
-    await writeLog("logout", {email:user.email, role:user.role});
-    await _auth.signOut(_auth.inst);
-    setUser(null); setMessages([]); setPayments([]); setCaseStatus([]); setClients([]);
-    setActive("dashboard");
-  };
-
-  // ── Callbacks que gravam no Firestore ────────────
-  const handleSetMessages = (fn) => {
-    // Apenas atualiza estado local (real-time listener mantém sync)
-    setMessages(fn);
-  };
-
-  const handleAddMessage = async (msgData) => {
-    const id = await dbAdd("messages", msgData);
-    await writeLog("message_sent", {subject:msgData.subject, clientId:msgData.clientId, source:msgData.source});
-    if (msgData.source === "client") {
-      // Cliente enviou → notificar admins
-      const senderName = msgData.from || "Cliente";
-      for (const admin of ADMIN_NOTIFY_EMAILS) {
-        await sendEmail({
-          to_email:   admin.email,
-          to_name:    admin.name,
-          subject:    `📩 Nova mensagem de ${senderName} — Zion Portal`,
-          event_type: "new_message_admin",
-          message:    `${senderName} enviou uma nova mensagem no portal:\n\n` +
-                      `📌 Assunto: ${msgData.subject}\n\n` +
-                      `"${msgData.body}"\n\n` +
-                      `Acesse o portal para responder.`,
-        });
-      }
-    } else {
-      // Zion/Sponsor enviou → notificar cliente
-      const cl = clients.find(c=>(c.clientId||c.uid)===msgData.clientId);
-      if (cl?.email) {
-        await sendEmail({
-          to_email:   cl.email,
-          to_name:    cl.name?.split(" ")[0] || "Cliente",
-          subject:    `✉ Nova mensagem: ${msgData.subject} — Zion Solutions`,
-          event_type: "new_message",
-          message:    `Você recebeu uma nova mensagem da Zion Solutions:\n\n"${msgData.body}"\n\nAcesse o portal para responder.`,
-        });
-      }
-    }
-    return id;
-  };
-
-  const handleAddPayment = async (payData) => {
-    const id = await dbAdd("payments", payData);
-    return id;
-  };
-
-  const handleUpdatePayment = async (id, status) => {
-    await dbUpdate("payments", id, { status });
-    await writeLog(`payment_${status}`, {paymentId:id, status});
-    if (status==="confirmed" || status==="rejected") {
-      const pay = payments.find(p=>p.id===id);
-      const cl  = clients.find(c=>(c.clientId||c.uid)===pay?.clientId);
-      if (cl?.email) {
-        const isConfirmed = status==="confirmed";
-        await sendEmail({
-          to_email:   cl.email,
-          to_name:    cl.name?.split(" ")[0] || "Cliente",
-          subject:    isConfirmed ? "✅ Pagamento confirmado — Zion Solutions" : "❌ Comprovante rejeitado — Zion Solutions",
-          event_type: isConfirmed ? "payment_confirmed" : "payment_rejected",
-          message:    isConfirmed
-            ? `Seu pagamento de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi confirmado pela Zion Solutions. Acesse o portal para ver seu progresso atualizado.`
-            : `Seu comprovante de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi rejeitado. Por favor, acesse o portal e envie novamente com o comprovante correto.`,
-        });
-      }
-    }
-  };
-
-  const handleDeletePayment = async (id) => {
-    // Deleta o documento do Firestore
-    try {
-      const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      await deleteDoc(doc(_db.inst, "payments", id));
-    } catch(e) {
-      // Fallback: marca como deletado se não conseguir deletar
-      await dbUpdate("payments", id, { status: "deleted", deletedAt: new Date().toISOString() });
-    }
-  };
-
-  const handleUpdateCaseStatus = async (stages, clientInfo) => {
-    const cid = clientInfo?.clientId || user.clientId || user.uid;
-    await dbUpdate("caseStatus", cid, { stages });
-    setCaseStatus(stages);
-    // Notificar cliente quando status do processo muda
-    if (clientInfo?.email) {
-      const updatedStage = stages.find(s=>s.status!=="pending"&&s.status!=="approved");
-      if (updatedStage) {
-        await sendEmail({
-          to_email:   clientInfo.email,
-          to_name:    clientInfo.name?.split(" ")[0] || "Cliente",
-          subject:    "📋 Atualização no seu processo — Zion Solutions",
-          event_type: "case_update",
-          message:    `Há uma atualização no seu processo de imigração. A etapa "${updatedStage.stage}" está agora com status: ${updatedStage.status}. ${updatedStage.note||""} Acesse o portal para mais detalhes.`,
-        });
-      }
-    }
-  };
-
-  const handleUpdateBulletin = async (data) => {
-    const existing = await dbGet("bulletin","current");
-    if (existing) await dbUpdate("bulletin","current", data);
-    else await dbAdd("bulletin", { ...data });
-    setBulletin(data);
-  };
-
-  const handleAddClient = async (clientData) => {
-    const id = await dbAdd("clients", clientData);
-    setClients(p=>[...p, { id, ...clientData }]);
-  };
-
-  // ── Loading inicial ──────────────────────────────
-  if (authLoading) return (
-    <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
-      <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid rgba(200,169,110,0.2)`,borderTopColor:T.gold,animation:"spin .8s linear infinite"}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{color:T.faint,fontSize:14}}>Conectando ao Firebase…</div>
-    </div>
-  );
-
-  if (!user) return <Login onLogin={u=>{setUser(u);setActive("dashboard");writeLog("login",{email:u.email,role:u.role});}}/>;
-
-  const isAdmin = user.role==="admin";
-  const isDev   = user.role==="developer";
-  const unread  = messages.filter(m=>m.clientId===(user.clientId||"")&&m.source!=="client"&&!m.read).length;
-
-  const pageTitle = {
-    dashboard:(isAdmin||isDev)?"Dashboard":`Olá, ${user.name?.split(" ")[0]} 👋`,
-    profile:isAdmin||isDev?"Perfil & Documentos":"Meu Perfil",
-    messages:"Mensagens", payments:(isAdmin||isDev)?"Pagamentos":"Financeiro",
-    cases:(isAdmin||isDev)?"Processos":"Meu Processo", bulletin:"Visa Bulletin",
-    clients:"Clientes", users:"Usuários", jobs:"Vagas",
-    reports:"Relatórios", devpanel:"⚡ Dev Panel", more:"Menu",
-  }[active]||"";
-
-  // Props compartilhadas entre views
-  const sharedProps = {
-    user, mobile, setActive,
-    messages,
-    setMessages: handleSetMessages,
-    addMessage:  handleAddMessage,
-    payments,
-    addPayment:     handleAddPayment,
-    updatePayment:  handleUpdatePayment,
-    deletePayment:  handleDeletePayment,
-    caseStatus,
-    updateCaseStatus: handleUpdateCaseStatus,
-    bulletin,
-    updateBulletin: handleUpdateBulletin,
-    clients,
-    addClient: handleAddClient,
-    setClients,
-  };
-
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CLIENT PROFILE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -4561,6 +4479,229 @@ function ClientProfile({user, clients, setClients, mobile}) {
   );
 }
 
+function App() {
+  // ── Páginas públicas ─────────────────────────────
+  const params = typeof window!=="undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  if (params.get("public")==="jobs")    return <PublicJobs/>;
+  if (params.get("public")==="privacy") return <PrivacyPolicy/>;
+
+  const mobile = useIsMobile();
+  const [user,setUser]             = useState(null);
+  const [authLoading,setAuthLoading] = useState(true);
+  const [active,setActive]         = useState("dashboard");
+  const [messages,setMessages]     = useState([]);
+  const [payments,setPayments]     = useState([]);
+  const [caseStatus,setCaseStatus] = useState([]);
+  const [bulletin,setBulletin]     = useState(DEFAULT_BULLETIN);
+  const [clients,setClients]       = useState([]);
+
+  // ── Verificar sessão ao montar ───────────────────
+  useEffect(()=>{
+    // Timeout de segurança — nunca fica travado mais de 8 segundos
+    const timeout = setTimeout(()=>setAuthLoading(false), 8000);
+    initFirebase().then(()=>{
+      _auth.onAuthStateChanged(_auth.inst, async fbUser => {
+        clearTimeout(timeout);
+        if (fbUser) {
+          try {
+            const doc = await dbGet("users", fbUser.uid);
+            if (doc) setUser({ uid: fbUser.uid, ...doc });
+          } catch(e) {
+            console.error("Erro ao carregar perfil:", e);
+          }
+        }
+        setAuthLoading(false);
+      });
+    }).catch(()=>setAuthLoading(false));
+  },[]);
+
+  // ── Carregar dados após login ────────────────────
+  useEffect(()=>{
+    if (!user || !_db) return;
+    const isAdmin = user.role==="admin";
+    const isDev   = user.role==="developer";
+    const unsubs = [];
+
+    if (isAdmin || isDev) {
+      // Admin/Developer: escuta todos os dados em tempo real
+      unsubs.push(dbListen("messages",  setMessages));
+      unsubs.push(dbListen("payments",  setPayments));
+      // Use real-time listener for clients to get driveFolderId updates
+      unsubs.push(dbListen("users", setClients, _db.where("role","==","client")));
+    } else {
+      // Cliente: escuta apenas seus próprios dados
+      const cid = user.clientId || user.uid;
+      unsubs.push(dbListen("messages", setMessages, _db.where("clientId","==",cid)));
+      unsubs.push(dbListen("payments", setPayments, _db.where("clientId","==",cid)));
+      dbGet("caseStatus", cid).then(d => setCaseStatus(d?.stages || DEFAULT_CASE));
+    }
+
+    // Bulletin (compartilhado)
+    dbGet("bulletin","current").then(d => { if(d) setBulletin(d); });
+
+    return () => unsubs.forEach(u=>u());
+  },[user]);
+
+  const logout = async () => {
+    await writeLog("logout", {email:user.email, role:user.role});
+    await _auth.signOut(_auth.inst);
+    setUser(null); setMessages([]); setPayments([]); setCaseStatus([]); setClients([]);
+    setActive("dashboard");
+  };
+
+  // ── Callbacks que gravam no Firestore ────────────
+  const handleSetMessages = (fn) => {
+    // Apenas atualiza estado local (real-time listener mantém sync)
+    setMessages(fn);
+  };
+
+  const handleAddMessage = async (msgData) => {
+    const id = await dbAdd("messages", msgData);
+    await writeLog("message_sent", {subject:msgData.subject, clientId:msgData.clientId, source:msgData.source});
+    if (msgData.source === "client") {
+      // Cliente enviou → notificar admins
+      const senderName = msgData.from || "Cliente";
+      for (const admin of ADMIN_NOTIFY_EMAILS) {
+        await sendEmail({
+          to_email:   admin.email,
+          to_name:    admin.name,
+          subject:    `📩 Nova mensagem de ${senderName} — Zion Portal`,
+          event_type: "new_message_admin",
+          message:    `${senderName} enviou uma nova mensagem no portal:\n\n` +
+                      `📌 Assunto: ${msgData.subject}\n\n` +
+                      `"${msgData.body}"\n\n` +
+                      `Acesse o portal para responder.`,
+        });
+      }
+    } else {
+      // Zion/Sponsor enviou → notificar cliente
+      const cl = clients.find(c=>(c.clientId||c.uid)===msgData.clientId);
+      if (cl?.email) {
+        await sendEmail({
+          to_email:   cl.email,
+          to_name:    cl.name?.split(" ")[0] || "Cliente",
+          subject:    `✉ Nova mensagem: ${msgData.subject} — Zion Solutions`,
+          event_type: "new_message",
+          message:    `Você recebeu uma nova mensagem da Zion Solutions:\n\n"${msgData.body}"\n\nAcesse o portal para responder.`,
+        });
+      }
+    }
+    return id;
+  };
+
+  const handleAddPayment = async (payData) => {
+    const id = await dbAdd("payments", payData);
+    return id;
+  };
+
+  const handleUpdatePayment = async (id, status) => {
+    await dbUpdate("payments", id, { status });
+    await writeLog(`payment_${status}`, {paymentId:id, status});
+    if (status==="confirmed" || status==="rejected") {
+      const pay = payments.find(p=>p.id===id);
+      const cl  = clients.find(c=>(c.clientId||c.uid)===pay?.clientId);
+      if (cl?.email) {
+        const isConfirmed = status==="confirmed";
+        await sendEmail({
+          to_email:   cl.email,
+          to_name:    cl.name?.split(" ")[0] || "Cliente",
+          subject:    isConfirmed ? "✅ Pagamento confirmado — Zion Solutions" : "❌ Comprovante rejeitado — Zion Solutions",
+          event_type: isConfirmed ? "payment_confirmed" : "payment_rejected",
+          message:    isConfirmed
+            ? `Seu pagamento de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi confirmado pela Zion Solutions. Acesse o portal para ver seu progresso atualizado.`
+            : `Seu comprovante de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi rejeitado. Por favor, acesse o portal e envie novamente com o comprovante correto.`,
+        });
+      }
+    }
+  };
+
+  const handleDeletePayment = async (id) => {
+    // Deleta o documento do Firestore
+    try {
+      const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      await deleteDoc(doc(_db.inst, "payments", id));
+    } catch(e) {
+      // Fallback: marca como deletado se não conseguir deletar
+      await dbUpdate("payments", id, { status: "deleted", deletedAt: new Date().toISOString() });
+    }
+  };
+
+  const handleUpdateCaseStatus = async (stages, clientInfo) => {
+    const cid = clientInfo?.clientId || user.clientId || user.uid;
+    await dbUpdate("caseStatus", cid, { stages });
+    setCaseStatus(stages);
+    // Notificar cliente quando status do processo muda
+    if (clientInfo?.email) {
+      const updatedStage = stages.find(s=>s.status!=="pending"&&s.status!=="approved");
+      if (updatedStage) {
+        await sendEmail({
+          to_email:   clientInfo.email,
+          to_name:    clientInfo.name?.split(" ")[0] || "Cliente",
+          subject:    "📋 Atualização no seu processo — Zion Solutions",
+          event_type: "case_update",
+          message:    `Há uma atualização no seu processo de imigração. A etapa "${updatedStage.stage}" está agora com status: ${updatedStage.status}. ${updatedStage.note||""} Acesse o portal para mais detalhes.`,
+        });
+      }
+    }
+  };
+
+  const handleUpdateBulletin = async (data) => {
+    const existing = await dbGet("bulletin","current");
+    if (existing) await dbUpdate("bulletin","current", data);
+    else await dbAdd("bulletin", { ...data });
+    setBulletin(data);
+  };
+
+  const handleAddClient = async (clientData) => {
+    const id = await dbAdd("clients", clientData);
+    setClients(p=>[...p, { id, ...clientData }]);
+  };
+
+  // ── Loading inicial ──────────────────────────────
+  if (authLoading) return (
+    <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
+      <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid rgba(200,169,110,0.2)`,borderTopColor:T.gold,animation:"spin .8s linear infinite"}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{color:T.faint,fontSize:14}}>Conectando ao Firebase…</div>
+    </div>
+  );
+
+  if (!user) return <Login onLogin={u=>{setUser(u);setActive("dashboard");writeLog("login",{email:u.email,role:u.role});}}/>;
+
+  const isAdmin = user.role==="admin";
+  const isDev   = user.role==="developer";
+  const unread  = messages.filter(m=>m.clientId===(user.clientId||"")&&m.source!=="client"&&!m.read).length;
+
+  const pageTitle = {
+    dashboard:(isAdmin||isDev)?"Dashboard":`Olá, ${user.name?.split(" ")[0]} 👋`,
+    profile:isAdmin||isDev?"Perfil & Documentos":"Meu Perfil",
+    messages:"Mensagens", payments:(isAdmin||isDev)?"Pagamentos":"Financeiro",
+    cases:(isAdmin||isDev)?"Processos":"Meu Processo", bulletin:"Visa Bulletin",
+    clients:"Clientes", users:"Usuários", jobs:"Vagas",
+    reports:"Relatórios", devpanel:"⚡ Dev Panel", more:"Menu",
+  }[active]||"";
+
+  // Props compartilhadas entre views
+  const sharedProps = {
+    user, mobile, setActive,
+    messages,
+    setMessages: handleSetMessages,
+    addMessage:  handleAddMessage,
+    payments,
+    addPayment:     handleAddPayment,
+    updatePayment:  handleUpdatePayment,
+    deletePayment:  handleDeletePayment,
+    caseStatus,
+    updateCaseStatus: handleUpdateCaseStatus,
+    bulletin,
+    updateBulletin: handleUpdateBulletin,
+    clients,
+    addClient: handleAddClient,
+    setClients,
+  };
+
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const renderView = () => {
     switch(active){
       case "dashboard": return <Dashboard {...sharedProps}/>;
