@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260422232108 -->
+  <!-- build:20260422232633 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>ImigraMe — Portal do Cliente</title>
@@ -308,7 +308,7 @@ async function sendEmail({to_email, to_name, subject, message, event_type}) {
           message,
           event_type: event_type || "notification",
           from_name:  "ImigraMe",
-          reply_to:   "admin@imigrame.com",
+          reply_to:   "ccesargo@gmail.com",
         },
       }),
     });
@@ -520,9 +520,9 @@ function Sidebar({user,active,setActive,onLogout}) {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           {isDev
             ? <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#7C3AED,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"bold",color:"#fff",fontSize:16}}>⚡</div>
-            : <div style={{display:"flex",alignItems:"center",gap:0}}><span style={{color:"#fff",fontWeight:700,fontSize:15,fontFamily:"Georgia,serif"}}>Imigra</span><span style={{color:"#4ade80",fontWeight:700,fontSize:15,fontFamily:"Georgia,serif"}}>Me</span></div>
+            : <div style={{display:"flex",alignItems:"center"}}><span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:16,color:"#fff"}}>Imigra</span><span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:16,color:"#4ade80"}}>Me</span></div>
           }
-          {isDev&&<div><div style={{color:"#A78BFA",fontWeight:700,fontSize:13}}>ImigraMe</div><div style={{color:T.faint,fontSize:11}}>Developer</div></div>}
+          <div><div style={{color:isDev?"#A78BFA":"rgba(74,222,128,0.8)",fontWeight:600,fontSize:11}}>{isDev?"Developer":isAdmin?"Administrador":"Cliente"}</div></div>
         </div>
       </div>
       <nav style={{flex:1,padding:"14px 10px"}}>
@@ -606,13 +606,13 @@ function Login({onLogin}) {
   return (
     <div style={{minHeight:"100vh",background:`linear-gradient(150deg,#060B18,#0D1829,#0A1220)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"Georgia,serif"}}>
       <div style={{marginBottom:36,textAlign:"center"}}>
-        <div style={{marginBottom:16,textAlign:"center"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:0,marginBottom:4}}>
-          <span style={{color:"#fff",fontWeight:700,fontSize:40,fontFamily:"Georgia,serif",letterSpacing:-1}}>Imigra</span>
-          <span style={{color:"#4ade80",fontWeight:700,fontSize:40,fontFamily:"Georgia,serif",letterSpacing:-1}}>Me</span>
+        <div style={{marginBottom:12,textAlign:"center"}}>
+          <div style={{display:"flex",alignItems:"baseline",justifyContent:"center"}}>
+            <span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:44,color:"#fff",letterSpacing:-1}}>Imigra</span>
+            <span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:44,color:"#4ade80",letterSpacing:-1}}>Me</span>
+          </div>
+          <p style={{color:"#4a7a5a",fontSize:11,letterSpacing:"0.18em",margin:"2px 0 0"}}>YOUR IMMIGRATION JOURNEY</p>
         </div>
-        <p style={{color:"#4a7a5a",fontSize:11,letterSpacing:"0.15em",margin:0}}>YOUR IMMIGRATION JOURNEY</p>
-      </div>
       </div>
       <div style={{width:"100%",maxWidth:400}}>
         {resetSent ? (
@@ -3078,7 +3078,7 @@ function VersionCard() {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:18}}>🚀</span>
           <div style={{textAlign:"left"}}>
-            <div style={{color:T.text,fontSize:13,fontWeight:600}}><span style={{color:T.green}}>Imigra</span><span style={{color:"#4ade80"}}>Me</span> <span style={{color:T.gold}}>v{APP_VERSION}</span></div>
+            <div style={{color:T.text,fontSize:13,fontWeight:600}}>ImigraMe <span style={{color:T.gold}}>v{APP_VERSION}</span></div>
             <div style={{color:T.faint,fontSize:11,marginTop:1}}>Última atualização: {CHANGELOG[0].date}</div>
           </div>
         </div>
@@ -3551,7 +3551,7 @@ function PrivacyPolicy() {
       <div style={s.page}>
         <a href="/" style={s.back}>← Voltar ao portal</a>
         <div style={s.logo}>
-          <div style={s.circle}>Z</div>
+          <div style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:18}}><span style={{color:"#fff"}}>Imigra</span><span style={{color:"#4ade80"}}>Me</span></div>
           <div><div style={{color:"#e8c87a",fontWeight:700,fontSize:16}}>ImigraMe</div><div style={{color:"#94a3b8",fontSize:12}}>Immigration Services</div></div>
         </div>
         <h1 style={s.h1}>Política de Privacidade</h1>
@@ -3593,7 +3593,7 @@ function PrivacyPolicy() {
         <h2 style={s.h2}>9. Contato</h2>
         <div style={{padding:"20px 24px",background:"rgba(232,200,122,0.08)",border:"1px solid rgba(232,200,122,0.2)",borderRadius:14}}>
           <p style={{...s.p,marginBottom:4}}>Para dúvidas sobre privacidade ou seus dados:</p>
-          <div style={{color:"#e2e8f0",fontSize:15,fontWeight:600}}>admin@imigrame.com</div>
+          <div style={{color:"#e2e8f0",fontSize:15,fontWeight:600}}>ccesargo@gmail.com</div>
           <div style={{color:"#94a3b8",fontSize:13,marginTop:4}}>ImigraMe · imigrame.netlify.app</div>
         </div>
       </div>
@@ -4607,20 +4607,7 @@ function ClientProfile({user, clients, setClients, mobile}) {
     <div style={{background:T.bg,minHeight:"100vh",fontFamily:"Georgia,'Times New Roman',serif",color:T.text,maxWidth:480,margin:"0 auto"}}>
       <div style={{position:"sticky",top:0,background:"rgba(8,13,26,0.95)",backdropFilter:"blur(10px)",borderBottom:`1px solid ${T.border}`,padding:"14px 16px",zIndex:50,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:15}}><span style={{color:"#fff"}}>Imigra</span><span style={{color:"#4ade80"}}>Me</span></span></linearGradient><linearGradient id='mg2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:#f0c040'/><stop offset='100%' style='stop-color:#d4a012'/></linearGradient></defs><rect x='0' y='2' width='20' height='14' rx='2' fill='url(#mc2)' stroke='#2d8a52' stroke-width='0.7'/><rect x='0' y='5.5' width='20' height='4' fill='#0d4a2a' opacity='0.6'/><circle cx='3' cy='4' r='1' fill='url(#mg2)'/><circle cx='6' cy='4' r='1' fill='url(#mg2)'/><circle cx='9' cy='4' r='1' fill='url(#mg2)'/><rect x='2' y='11' width='7' height='1' rx='0.5' fill='#4ade80' opacity='0.8'/><rect x='13' y='9' width='5' height='6' rx='1' fill='#1a3a6e'/><rect x='13' y='9' width='5' height='2.5' rx='1' fill='#c0392b'/><text x='25' y='17' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white'>Imigra</text><text x='75' y='17' font-family='Georgia,serif' font-size='13' font-weight='700' fill='#4ade80'>Me</text></svg>'}}/>
-        </div>
-        <span style={{color:T.text,fontWeight:700,fontSize:16}}>{pageTitle}</span>
-        <div style={{width:36}}/>
-      </div>
-      <div style={{padding:"16px 16px 88px"}}>{renderView()}</div>
-      <BottomNav user={user} active={active} setActive={setActive} onLogout={logout} unread={unread}/>
-    </div>
-  );
-}
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-  </script>
-</body>
-</html><span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:15}}><span style={{color:"#fff"}}>Imigra</span><span style={{color:"#4ade80"}}>Me</span></span></linearGradient><linearGradient id='mg2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:#f0c040'/><stop offset='100%' style='stop-color:#d4a012'/></linearGradient></defs><rect x='0' y='2' width='20' height='14' rx='2' fill='url(#mc2)' stroke='#2d8a52' stroke-width='0.7'/><rect x='0' y='5.5' width='20' height='4' fill='#0d4a2a' opacity='0.6'/><circle cx='3' cy='4' r='1' fill='url(#mg2)'/><circle cx='6' cy='4' r='1' fill='url(#mg2)'/><circle cx='9' cy='4' r='1' fill='url(#mg2)'/><rect x='2' y='11' width='7' height='1' rx='0.5' fill='#4ade80' opacity='0.8'/><rect x='13' y='9' width='5' height='6' rx='1' fill='#1a3a6e'/><rect x='13' y='9' width='5' height='2.5' rx='1' fill='#c0392b'/><text x='25' y='17' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white'>Imigra</text><text x='75' y='17' font-family='Georgia,serif' font-size='13' font-weight='700' fill='#4ade80'>Me</text></svg>'}}/>
+          <span style={{fontFamily:"Georgia,serif",fontWeight:700,fontSize:17}}><span style={{color:"#fff"}}>Imigra</span><span style={{color:"#4ade80"}}>Me</span></span>
         </div>
         <span style={{color:T.text,fontWeight:700,fontSize:16}}>{pageTitle}</span>
         <div style={{width:36}}/>
