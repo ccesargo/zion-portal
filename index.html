@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260418190000 -->
+  <!-- build:20260422225436 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
-  <title>Zion Solutions — Portal do Cliente</title>
+  <title>ImigraMe — Portal do Cliente</title>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body,#root{height:100%}
@@ -143,10 +143,10 @@ const DEVELOPER = {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // VERSÃO E CHANGELOG
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-const APP_VERSION = "2.0.2";
+const APP_VERSION = "2.0.0";
 const CHANGELOG = [
   {
-    version: "2.0.2",
+    version: "2.0.0",
     date: "16/04/2026",
     changes: [
       "Relatórios completos: Geral, Por Cliente, Em Risco e Receita Mensal para admin",
@@ -185,7 +185,7 @@ const CHANGELOG = [
     date: "14/04/2026",
     changes: [
       "Notificação no dashboard de novas mensagens não lidas (banner azul animado)",
-      "Lógica de leitura corrigida: admin vê msgs de clientes, cliente vê msgs da Zion",
+      "Lógica de leitura corrigida: admin vê msgs de clientes, cliente vê msgs do ImigraMe",
       "Notificação por e-mail para admins quando cliente envia mensagem",
       "Cliente pode apagar mensagens que enviou (remoção permanente do servidor)",
       "Confirmação antes de apagar mensagem",
@@ -197,7 +197,7 @@ const CHANGELOG = [
     changes: [
       "Protocolos de acompanhamento: PERM, I-140, I-485, NVC no cadastro e edição de clientes",
       "Protocolos aparecem na aba Processo com links diretos para os sites oficiais",
-      "Cliente pode enviar mensagens para a Zion Solutions",
+      "Cliente pode enviar mensagens para a ImigraMe",
       "Badge de identificação roxo para mensagens enviadas pelo cliente",
     ]
   },
@@ -206,7 +206,7 @@ const CHANGELOG = [
     date: "13/04/2026",
     changes: [
       "Relatórios financeiros para o cliente",
-      "Relatórios para Zion: Financeiro Geral, Status dos Casos e Tipo de Processo",
+      "Relatórios para ImigraMe: Financeiro Geral, Status dos Casos e Tipo de Processo",
       "Gráficos de barras, donut e progress bars nos relatórios",
       "Impressão / exportação para PDF de todos os relatórios",
     ]
@@ -246,7 +246,7 @@ const CHANGELOG = [
     version: "1.1.0",
     date: "11/04/2026",
     changes: [
-      "Sistema de mensagens: Zion e Sponsor enviam, cliente recebe e lê",
+      "Sistema de mensagens: ImigraMe e Sponsor enviam, cliente recebe e lê",
       "Marca mensagens como lidas ao abrir",
       "Badge de não lidas no menu e dashboard",
       "Notificação por e-mail (EmailJS) ao receber nova mensagem",
@@ -256,7 +256,7 @@ const CHANGELOG = [
     version: "1.0.0",
     date: "10/04/2026",
     changes: [
-      "Lançamento do portal Zion Solutions",
+      "Lançamento do portal ImigraMe",
       "Login com Firebase Authentication",
       "Dashboard para admin e para cliente",
       "Cadastro de clientes com plano de pagamento personalizado",
@@ -267,7 +267,7 @@ const CHANGELOG = [
 
 // E-mails dos administradores para notificações de novas mensagens de clientes
 const ADMIN_NOTIFY_EMAILS = [
-  { email: "admin@zionsolutions.com", name: "Zion Solutions" },
+  { email: "ccesargo@gmail.com", name: "ImigraMe" },
   // Adicione mais admins aqui se necessário
 ];
 
@@ -307,8 +307,8 @@ async function sendEmail({to_email, to_name, subject, message, event_type}) {
           subject,
           message,
           event_type: event_type || "notification",
-          from_name:  "Zion Solutions",
-          reply_to:   "admin@zionsolutions.com",
+          from_name:  "ImigraMe",
+          reply_to:   "admin@imigrame.com",
         },
       }),
     });
@@ -402,10 +402,10 @@ function printReport(title, html) {
     .y{background:#fef3c7;color:#92400e;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:bold}
     footer{margin-top:40px;color:#aaa;font-size:11px;border-top:1px solid #e5d5b0;padding-top:12px;text-align:center}
   </style></head><body>
-    <h1>Zion Solutions — ${title}</h1>
+    <h1>ImigraMe — ${title}</h1>
     <p style="color:#999;font-size:12px">Gerado em ${new Date().toLocaleString("pt-BR")}</p>
     ${html}
-    <footer>Zion Solutions · Portal do Cliente · Documento gerado automaticamente</footer>
+    <footer>ImigraMe · Portal do Cliente · Documento gerado automaticamente</footer>
   </body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),400);
@@ -519,7 +519,7 @@ function Sidebar({user,active,setActive,onLogout}) {
       <div style={{padding:"28px 20px 20px",borderBottom:`1px solid ${T.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <div style={{width:36,height:36,borderRadius:"50%",background:isDev?"linear-gradient(135deg,#7C3AED,#A78BFA)":`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"bold",color:"#fff",fontSize:16}}>{isDev?"⚡":"Z"}</div>
-          <div><div style={{color:isDev?"#A78BFA":T.gold,fontWeight:700,fontSize:13}}>Zion Solutions</div><div style={{color:T.faint,fontSize:11}}>{isDev?"Developer":isAdmin?"Administrador":"Cliente"}</div></div>
+          <div><div style={{color:isDev?"#A78BFA":T.gold,fontWeight:700,fontSize:13}}>ImigraMe</div><div style={{color:T.faint,fontSize:11}}>{isDev?"Developer":isAdmin?"Administrador":"Cliente"}</div></div>
         </div>
       </div>
       <nav style={{flex:1,padding:"14px 10px"}}>
@@ -604,7 +604,7 @@ function Login({onLogin}) {
     <div style={{minHeight:"100vh",background:`linear-gradient(150deg,#060B18,#0D1829,#0A1220)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"Georgia,serif"}}>
       <div style={{marginBottom:36,textAlign:"center"}}>
         <div style={{width:68,height:68,borderRadius:"50%",background:`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:28,fontWeight:"bold",color:"#0A0F1E",boxShadow:`0 0 40px rgba(200,169,110,0.3)`}}>Z</div>
-        <h1 style={{color:T.gold,fontSize:26,fontWeight:700,margin:0}}>Zion Solutions</h1>
+        <h1 style={{color:T.gold,fontSize:26,fontWeight:700,margin:0}}>ImigraMe</h1>
         <p style={{color:T.faint,fontSize:13,marginTop:6}}>Portal do Cliente</p>
       </div>
       <div style={{width:"100%",maxWidth:400}}>
@@ -733,7 +733,7 @@ function Dashboard({user,messages,payments,caseStatus,clients,mobile,setActive})
               <span style={{position:"absolute",top:-4,right:-6,minWidth:18,height:18,borderRadius:99,background:T.blue,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{unread}</span>
             </div>
             <div>
-              <div style={{color:T.blue,fontWeight:700,fontSize:14}}>Nova{unread>1?"s":""} mensagem{unread>1?"s":""} da Zion Solutions</div>
+              <div style={{color:T.blue,fontWeight:700,fontSize:14}}>Nova{unread>1?"s":""} mensagem{unread>1?"s":""} da ImigraMe</div>
               <div style={{color:T.dim,fontSize:12,marginTop:2}}>Clique para ler {unread>1?`as ${unread} mensagens`:"a mensagem"}</div>
             </div>
           </div>
@@ -792,7 +792,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
     if(!form.subject||!form.body)return;
     if(isAdmin&&!form.clientId)return;
     const targetClientId = isAdmin ? form.clientId : (user.clientId||user.uid);
-    const data={clientId:targetClientId,from:isAdmin?"Zion Solutions":user.name,subject:form.subject,body:form.body,date:new Date().toISOString().split("T")[0],source:isAdmin?form.source:"client",read:false};
+    const data={clientId:targetClientId,from:isAdmin?"ImigraMe":user.name,subject:form.subject,body:form.body,date:new Date().toISOString().split("T")[0],source:isAdmin?form.source:"client",read:false};
     await addMessage(data);
     setOpen(false); setForm({subject:"",body:"",source:"zion",clientId:""});
   };
@@ -802,7 +802,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
     <div style={{display:"flex",flexDirection:"column",gap:16}}>
       <button onClick={()=>setSel(null)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:"none",color:T.dim,fontSize:14,cursor:"pointer",fontFamily:"Georgia,serif",padding:0}}>‹ Voltar</button>
       <h2 style={{color:T.text,fontSize:18,fontWeight:700,margin:0}}>{sel.subject}</h2>
-      <div style={{display:"flex",gap:8}}><Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill><span style={{color:T.faint,fontSize:12,alignSelf:"center"}}>{fmt(sel.date)}</span></div>
+      <div style={{display:"flex",gap:8}}><Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"ImigraMe":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill><span style={{color:T.faint,fontSize:12,alignSelf:"center"}}>{fmt(sel.date)}</span></div>
       <Card><p style={{color:"rgba(255,255,255,0.8)",lineHeight:1.75,fontSize:15,margin:0,whiteSpace:"pre-wrap"}}>{sel.body}</p></Card>
       {canDelete(sel)&&<button onClick={()=>setConfirmDel(sel)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"11px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.25)",borderRadius:10,color:T.red,fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",width:"100%"}}>🗑 Apagar esta mensagem</button>}
     </div>
@@ -820,7 +820,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
               {!msg.read&&<div style={{position:"absolute",top:14,right:14,width:8,height:8,borderRadius:"50%",background:T.gold}}/>}
               <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                 <div style={{display:"flex",gap:6,alignItems:"center"}}>
-                  <Pill color={msg.source==="zion"?T.gold:msg.source==="client"?"#A78BFA":T.blue} bg={msg.source==="zion"?"rgba(232,200,122,0.1)":msg.source==="client"?"rgba(167,139,250,0.1)":"rgba(96,165,250,0.1)"}>{msg.source==="zion"?"Zion Solutions":msg.source==="client"?(isAdmin?msg.from:"Você"):"Sponsor"}</Pill>
+                  <Pill color={msg.source==="zion"?T.gold:msg.source==="client"?"#A78BFA":T.blue} bg={msg.source==="zion"?"rgba(232,200,122,0.1)":msg.source==="client"?"rgba(167,139,250,0.1)":"rgba(96,165,250,0.1)"}>{msg.source==="zion"?"ImigraMe":msg.source==="client"?(isAdmin?msg.from:"Você"):"Sponsor"}</Pill>
                   {isAdmin&&<span style={{color:T.faint,fontSize:11}}>→ {getClientName(msg.clientId)}</span>}
                 </div>
                 <span style={{color:T.faint,fontSize:11}}>{fmt(msg.date)}</span>
@@ -837,7 +837,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
           {sel?(<div>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,paddingBottom:18,borderBottom:`1px solid ${T.border}`}}>
               <div><h2 style={{color:T.text,margin:"0 0 6px",fontSize:20}}>{sel.subject}</h2><div style={{color:T.faint,fontSize:13}}>De: {sel.from} · {fmt(sel.date)}</div></div>
-              <Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"Zion Solutions":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill>
+              <Pill color={sel.source==="zion"?T.gold:sel.source==="client"?"#A78BFA":T.blue} bg={sel.source==="zion"?"rgba(232,200,122,0.12)":sel.source==="client"?"rgba(167,139,250,0.12)":"rgba(96,165,250,0.12)"}>{sel.source==="zion"?"ImigraMe":sel.source==="client"?(isAdmin?sel.from:"Você"):"Sponsor"}</Pill>
             </div>
             <p style={{color:"rgba(255,255,255,0.8)",lineHeight:1.75,fontSize:14,margin:0,whiteSpace:"pre-wrap"}}>{sel.body}</p>
             {canDelete(sel)&&(
@@ -867,8 +867,8 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
           </Card>
         </div>
       )}
-      <Overlay open={open} onClose={()=>setOpen(false)} title={isAdmin?"Nova Mensagem":"Enviar Mensagem para Zion"} mobile={mobile}>
-        {!isAdmin&&<div style={{marginBottom:14,padding:"10px 14px",background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:10}}><span style={{color:"#A78BFA",fontSize:13}}>✉ Para: <strong>Zion Solutions</strong></span></div>}
+      <Overlay open={open} onClose={()=>setOpen(false)} title={isAdmin?"Nova Mensagem":"Enviar Mensagem para ImigraMe"} mobile={mobile}>
+        {!isAdmin&&<div style={{marginBottom:14,padding:"10px 14px",background:"rgba(167,139,250,0.08)",border:"1px solid rgba(167,139,250,0.2)",borderRadius:10}}><span style={{color:"#A78BFA",fontSize:13}}>✉ Para: <strong>ImigraMe</strong></span></div>}
         {isAdmin&&(
           <>
             <div style={{marginBottom:14}}>
@@ -878,7 +878,7 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
                 {clients.map(c=><option key={c.uid} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name?.split(" ").slice(0,2).join(" ")}</option>)}
               </select>
             </div>
-            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Origem</div><select value={form.source} onChange={e=>setForm(p=>({...p,source:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}><option value="zion" style={{background:"#0D1117"}}>Zion Solutions</option><option value="sponsor" style={{background:"#0D1117"}}>Sponsor</option></select></div>
+            <div style={{marginBottom:14}}><div style={{color:T.dim,fontSize:12,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:6}}>Origem</div><select value={form.source} onChange={e=>setForm(p=>({...p,source:e.target.value}))} style={{width:"100%",padding:"13px 16px",background:"rgba(255,255,255,0.10)",border:"1px solid rgba(255,255,255,0.15)",borderRadius:12,color:"#fff",fontSize:15,fontFamily:"Georgia,serif",outline:"none"}}><option value="zion" style={{background:"#0D1117"}}>ImigraMe</option><option value="sponsor" style={{background:"#0D1117"}}>Sponsor</option></select></div>
           </>
         )}
         <FInp label="Assunto" value={form.subject} onChange={e=>setForm(p=>({...p,subject:e.target.value}))}/>
@@ -892,123 +892,6 @@ function Messages({user,messages,setMessages,addMessage,clients,mobile}) {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // PAYMENTS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// PAYMENT STATEMENT MODAL
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function PaymentStatementModal({open, onClose, payments, client, mobile}) {
-  const all = (payments || []).filter(p => p.status === "confirmed");
-  const [selected, setSelected] = useState([]);
-  const [generating, setGenerating] = useState(false);
-  useEffect(() => { if (open) setSelected((payments||[]).filter(p=>p.status==="confirmed").map(p=>p.id)); }, [open, payments]);
-  const toggle = (id) => setSelected(p => p.includes(id) ? p.filter(x=>x!==id) : [...p,id]);
-  const toggleAll = () => setSelected(selected.length===all.length ? [] : all.map(p=>p.id));
-
-  const generate = () => {
-    const chosen = all.filter(p=>selected.includes(p.id));
-    if (!chosen.length) return;
-    setGenerating(true);
-    const totalSel = chosen.reduce((s,p)=>s+p.amount,0);
-    const totalAll = all.reduce((s,p)=>s+p.amount,0);
-    const planTotal = client?.plan?.total||0;
-    const remaining = Math.max(0, planTotal - totalAll);
-    const m = n=>"$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2});
-    const rows = chosen.map(p=>{
-      const d = !p.date?"—":new Date(p.date+"T12:00:00").toLocaleDateString("pt-BR");
-      const r = p.receiptUrl?"<a href='"+p.receiptUrl+"' style='color:#1d4ed8;font-size:11px'>📎 Ver</a>":"—";
-      return "<tr><td>"+(p.description||"—")+"</td><td>"+d+"</td><td style='text-align:right;font-weight:700;color:#15803d'>"+m(p.amount)+"</td><td style='text-align:center'>"+r+"</td></tr>";
-    }).join("");
-    const html=(
-      "<div style='background:#fdf6e3;border:1px solid #e5d5b0;border-radius:12px;padding:18px 22px;margin-bottom:24px'>"+
-        "<table style='width:100%;border:none;margin:0'>"+
-          "<tr><td style='border:none;padding:3px 0;color:#888;font-size:12px;width:120px'>Cliente</td><td style='border:none;padding:3px 0;font-weight:600;color:#111'>"+(client?.name||"—")+"</td></tr>"+
-          (client?.caseType?"<tr><td style='border:none;padding:3px 0;color:#888;font-size:12px'>Processo</td><td style='border:none;padding:3px 0;color:#5a4a1a'>"+client.caseType+"</td></tr>":"")+
-          (client?.sponsor?"<tr><td style='border:none;padding:3px 0;color:#888;font-size:12px'>Patrocinador</td><td style='border:none;padding:3px 0;color:#5a4a1a'>"+client.sponsor+"</td></tr>":"")+
-        "</table>"+
-      "</div>"+
-      "<div style='display:flex;gap:12px;margin-bottom:24px;flex-wrap:wrap'>"+
-        "<div class='kpi'><div class='kpi-val'>"+m(totalSel)+"</div><div class='kpi-lbl'>Total Selecionado</div></div>"+
-        "<div class='kpi'><div class='kpi-val'>"+chosen.length+"</div><div class='kpi-lbl'>Pagamento(s)</div></div>"+
-        (planTotal>0?"<div class='kpi'><div class='kpi-val'>"+m(remaining)+"</div><div class='kpi-lbl'>Saldo Restante</div></div>":"")+
-      "</div>"+
-      "<table>"+
-        "<tr><th>Descrição</th><th>Data</th><th style='text-align:right'>Valor</th><th style='text-align:center'>Comprovante</th></tr>"+
-        rows+
-        "<tr style='border-top:2px solid #C8A96E'>"+
-          "<td colspan='2' style='font-weight:700;color:#5a4a1a;padding-top:12px'>TOTAL</td>"+
-          "<td style='text-align:right;font-weight:700;font-size:16px;color:#15803d;padding-top:12px'>"+m(totalSel)+"</td>"+
-          "<td></td>"+
-        "</tr>"+
-      "</table>"
-    );
-    printReport("Extrato de Pagamentos — "+(client?.name||"Cliente"), html);
-    setTimeout(()=>{setGenerating(false);onClose();},300);
-  };
-
-  if (!open) return null;
-  return (
-    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.78)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:400,padding:16}}>
-      <div style={{background:"#0D1117",border:"1px solid rgba(232,200,122,0.25)",borderRadius:20,width:"100%",maxWidth:540,maxHeight:"90vh",display:"flex",flexDirection:"column",overflow:"hidden"}}>
-        <div style={{padding:"18px 20px",borderBottom:"1px solid rgba(255,255,255,0.08)",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
-          <div>
-            <div style={{color:T.gold,fontWeight:700,fontSize:16}}>📄 Extrato de Pagamentos</div>
-            <div style={{color:T.faint,fontSize:12,marginTop:2}}>{client?.name||"Cliente"}</div>
-          </div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:T.faint,fontSize:24,cursor:"pointer",padding:"0 6px",lineHeight:1}}>×</button>
-        </div>
-        <div style={{padding:"16px 20px",overflowY:"auto",flex:1}}>
-          {all.length===0 ? (
-            <div style={{textAlign:"center",padding:"32px 0",color:T.faint,fontSize:14}}>
-              <div style={{fontSize:32,marginBottom:10}}>💳</div>
-              Nenhum pagamento confirmado para exibir.
-            </div>
-          ) : (
-            <>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,padding:"9px 12px",background:"rgba(232,200,122,0.06)",borderRadius:10,border:"1px solid rgba(232,200,122,0.15)"}}>
-                <label style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}>
-                  <input type="checkbox" checked={selected.length===all.length&&all.length>0} onChange={toggleAll}
-                    style={{width:16,height:16,accentColor:T.gold,cursor:"pointer"}}/>
-                  <span style={{color:T.dim,fontSize:13,fontWeight:600}}>Selecionar todos ({all.length})</span>
-                </label>
-                <span style={{color:T.green,fontWeight:700,fontSize:13}}>
-                  {"$"+Number(all.filter(p=>selected.includes(p.id)).reduce((s,p)=>s+p.amount,0)).toLocaleString("en-US",{minimumFractionDigits:2})}
-                </span>
-              </div>
-              <div style={{display:"flex",flexDirection:"column",gap:6}}>
-                {all.map(p=>{
-                  const isSel=selected.includes(p.id);
-                  const d=!p.date?"—":new Date(p.date+"T12:00:00").toLocaleDateString("pt-BR");
-                  return (
-                    <label key={p.id} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",background:isSel?"rgba(16,185,129,0.08)":"rgba(255,255,255,0.03)",border:"1px solid "+(isSel?"rgba(16,185,129,0.25)":"rgba(255,255,255,0.07)"),borderRadius:12,cursor:"pointer"}}>
-                      <input type="checkbox" checked={isSel} onChange={()=>toggle(p.id)}
-                        style={{width:16,height:16,accentColor:T.green,cursor:"pointer",flexShrink:0}}/>
-                      <div style={{flex:1,minWidth:0}}>
-                        <div style={{color:T.text,fontWeight:600,fontSize:13}}>{p.description}</div>
-                        <div style={{color:T.faint,fontSize:11,marginTop:2}}>{d}</div>
-                      </div>
-                      <div style={{color:T.green,fontWeight:700,fontSize:14,flexShrink:0}}>
-                        {"$"+Number(p.amount||0).toLocaleString("en-US",{minimumFractionDigits:2})}
-                      </div>
-                    </label>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-        {all.length>0&&(
-          <div style={{padding:"14px 20px",borderTop:"1px solid rgba(255,255,255,0.08)",display:"flex",gap:10,flexShrink:0}}>
-            <Btn onClick={generate} disabled={generating||selected.length===0} style={{flex:1}}>
-              {generating?"Gerando…":"📥 Gerar PDF ("+(selected.length)+")"}
-            </Btn>
-            <Btn variant="ghost" onClick={onClose} style={{flex:1}}>Cancelar</Btn>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 function Payments({user,payments,addPayment,updatePayment,deletePayment,clients,mobile}) {
   const isAdmin=user.role==="admin";
   return isAdmin
@@ -1020,7 +903,6 @@ function Payments({user,payments,addPayment,updatePayment,deletePayment,clients,
 function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
   const [filterId,setFilterId] = useState("all");
   const [confirmDel,setConfirmDel] = useState(null); // pagamento a deletar
-  const [stmtClient,setStmtClient]   = useState(null); // extrato por cliente
   const change = async(id,status) => await updatePayment(id,status);
 
   const pending   = payments.filter(p=>p.status==="pending_review");
@@ -1114,11 +996,6 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
               {clients.map(c=><option key={c.uid} value={c.clientId||c.uid} style={{background:"#0D1117"}}>{c.name?.split(" ")[0]}</option>)}
             </select>
             <Btn variant="ghost" onClick={()=>{
-              const cl=filterId==="all"?null:clients.find(c=>(c.clientId||c.uid)===filterId);
-              const pays=filterId==="all"?payments:payments.filter(p=>p.clientId===filterId);
-              setStmtClient({client:cl,pays});
-            }} style={{padding:"6px 14px",fontSize:12}} title="Gerar extrato">📄</Btn>
-            <Btn variant="ghost" onClick={()=>{
               const rows=visible.map(p=>{
                 const cl=clients.find(c=>(c.clientId||c.uid)===p.clientId);
                 const st=p.status==="confirmed"?"Confirmado":p.status==="rejected"?"Rejeitado":"Revisão";
@@ -1171,13 +1048,6 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
       </Card>
 
       {/* Modal confirmar exclusão */}
-      <PaymentStatementModal
-        open={!!stmtClient}
-        onClose={()=>setStmtClient(null)}
-        payments={stmtClient?.pays||[]}
-        client={stmtClient?.client}
-        mobile={mobile}/>
-
       {confirmDel&&(
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:300,padding:16}}>
           <Card style={{width:440,maxWidth:"100%"}}>
@@ -1204,7 +1074,6 @@ function PaymentsAdmin({payments,updatePayment,deletePayment,clients,mobile}) {
 // ── Cliente: plano com progresso automático + enviar comprovante ─────────────
 function PaymentsClient({user,payments,addPayment,clients,mobile}) {
   const [open,setOpen]         = useState(false);
-  const [stmtOpen,setStmtOpen] = useState(false);
   const [uploading,setUploading] = useState(false);
   const [selectedOption,setSelectedOption] = useState(null);
   const [receiptUrl,setReceiptUrl] = useState("");
@@ -1320,12 +1189,12 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
       {!hasPlan&&(
         <div style={{padding:"14px 16px",background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:14}}>
           <div style={{color:T.amber,fontWeight:600,fontSize:14,marginBottom:4}}>⚠️ Plano não configurado</div>
-          <div style={{color:T.dim,fontSize:13,lineHeight:1.6}}>Seu plano de pagamento ainda não foi cadastrado pela Zion Solutions. Entre em contato para regularizar.</div>
+          <div style={{color:T.dim,fontSize:13,lineHeight:1.6}}>Seu plano de pagamento ainda não foi cadastrado pela ImigraMe. Entre em contato para regularizar.</div>
         </div>
       )}
       {pendentes.length>0&&(
         <div style={{padding:"12px 16px",background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.25)",borderRadius:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div><div style={{color:T.amber,fontWeight:600,fontSize:14}}>⏳ {pendentes.length} comprovante{pendentes.length>1?"s":""} em revisão</div><div style={{color:T.dim,fontSize:12,marginTop:2}}>Aguardando confirmação da Zion Solutions</div></div>
+          <div><div style={{color:T.amber,fontWeight:600,fontSize:14}}>⏳ {pendentes.length} comprovante{pendentes.length>1?"s":""} em revisão</div><div style={{color:T.dim,fontSize:12,marginTop:2}}>Aguardando confirmação da ImigraMe</div></div>
         </div>
       )}
 
@@ -1408,10 +1277,7 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
 
       {/* Histórico */}
       <Card>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-          <h3 style={{color:T.gold,margin:0,fontSize:15}}>Histórico de Pagamentos</h3>
-          <Btn variant="ghost" onClick={()=>setStmtOpen(true)} style={{padding:"6px 14px",fontSize:12}}>📄 Extrato</Btn>
-        </div>
+        <h3 style={{color:T.gold,margin:"0 0 14px",fontSize:15}}>Histórico de Pagamentos</h3>
         {myPay.length===0
           ? <div style={{color:T.faint,textAlign:"center",padding:20,fontSize:13}}>Nenhum pagamento registrado.<br/><span style={{fontSize:12}}>Envie um comprovante para começar.</span></div>
           : <div style={{display:"flex",flexDirection:"column",gap:0}}>
@@ -1497,13 +1363,6 @@ function PaymentsClient({user,payments,addPayment,clients,mobile}) {
           <Btn variant="ghost" onClick={()=>{setOpen(false);setSelectedOption(null);setReceiptUrl("");setCustomAmount("");}} style={{flex:1}}>Cancelar</Btn>
         </div>
       </Overlay>
-
-      <PaymentStatementModal
-        open={stmtOpen}
-        onClose={()=>setStmtOpen(false)}
-        payments={myPay}
-        client={clientData}
-        mobile={mobile}/>
     </div>
   );
 }
@@ -1666,7 +1525,7 @@ function Cases({user,caseStatus,updateCaseStatus,clients,mobile}) {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10}}>
               <div style={{flex:1}}>
                 <div style={{color:T.text,fontWeight:700,fontSize:13,marginBottom:3}}>🦅 I-140 / I-485 / Green Card — USCIS</div>
-                <div style={{color:T.faint,fontSize:11,lineHeight:1.5}}>Etapas após o PERM. Use o Receipt Number fornecido pela Zion Solutions (ex: <span style={{fontFamily:"monospace"}}>MSC259...</span>)</div>
+                <div style={{color:T.faint,fontSize:11,lineHeight:1.5}}>Etapas após o PERM. Use o Receipt Number fornecido pela ImigraMe (ex: <span style={{fontFamily:"monospace"}}>MSC259...</span>)</div>
               </div>
               <a href="https://egov.uscis.gov/casestatus/landing.do" target="_blank" rel="noreferrer"
                 style={{display:"block",padding:"8px 14px",background:"rgba(96,165,250,0.15)",border:"1px solid rgba(96,165,250,0.3)",borderRadius:9,color:T.blue,fontWeight:700,fontSize:12,textDecoration:"none",flexShrink:0,fontFamily:"Georgia,serif",whiteSpace:"nowrap"}}>
@@ -1738,7 +1597,7 @@ function DocumentsSection({user, clients, clientInfo, isAdmin}) {
   if (!folderId) return (
     <Card style={{borderColor:"rgba(245,158,11,0.25)",background:"rgba(245,158,11,0.05)"}}>
       <div style={{color:T.amber,fontWeight:600,marginBottom:6}}>📁 Google Drive não configurado</div>
-      <div style={{color:T.dim,fontSize:13}}>{isAdmin?"Recadastre o cliente para criar a pasta automaticamente no Drive.":"Aguarde a Zion Solutions configurar seu espaço de documentos."}</div>
+      <div style={{color:T.dim,fontSize:13}}>{isAdmin?"Recadastre o cliente para criar a pasta automaticamente no Drive.":"Aguarde a ImigraMe configurar seu espaço de documentos."}</div>
     </Card>
   );
 
@@ -2122,11 +1981,11 @@ function Clients({clients,setClients,mobile}) {
       await sendEmail({
         to_email:   form.email,
         to_name:    form.name.split(" ")[0],
-        subject:    "🎉 Bem-vindo ao Portal Zion Solutions!",
+        subject:    "🎉 Bem-vindo ao Portal ImigraMe!",
         event_type: "welcome",
         message:    `Seu acesso ao portal foi criado com sucesso!\n\n` +
                     `━━ SEUS DADOS DE ACESSO ━━\n` +
-                    `🌐 Portal: zionsolution.netlify.app\n` +
+                    `🌐 Portal: imigrame.netlify.app\n` +
                     `📧 E-mail: ${form.email}\n` +
                     `🔑 Senha: ${defaultPassword}\n` +
                     `(Recomendamos alterar sua senha no primeiro acesso)\n\n` +
@@ -2142,7 +2001,7 @@ function Clients({clients,setClients,mobile}) {
                     `💰 Total: ${fmtUSD(total())}\n\n` +
                     `Acesse o portal para acompanhar seu processo em tempo real.\n` +
                     `Qualquer dúvida, entre em contato conosco.\n\n` +
-                    `Equipe Zion Solutions`,
+                    `Equipe ImigraMe`,
       });
 
       setClients(p=>[...p,{uid, id:uid, clientId, name:form.name, email:form.email, role:"client", caseType:form.caseType, sponsor:form.sponsor, priorityDate:form.priorityDate, plan, driveFolderId}]);
@@ -3166,7 +3025,7 @@ function Reports({user,payments,clients,caseStatus,mobile}) {
             <Row label="Entrada nos EUA" value={fmt(myClient?.documents?.entryDate)||"—"}/>
             <Row label="I-94" value={myClient?.documents?.i94||"—"}/>
             {myClient?.documents?.visaExp&&new Date(myClient.documents.visaExp)<new Date(Date.now()+90*24*60*60*1000)&&(
-              <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,marginTop:10,color:T.red,fontSize:13}}>⚠️ Visto vence em menos de 90 dias — entre em contato com a Zion Solutions!</div>
+              <div style={{padding:"10px 14px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,marginTop:10,color:T.red,fontSize:13}}>⚠️ Visto vence em menos de 90 dias — entre em contato com a ImigraMe!</div>
             )}
           </Card>
           <Card>
@@ -3212,7 +3071,7 @@ function VersionCard() {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:18}}>🚀</span>
           <div style={{textAlign:"left"}}>
-            <div style={{color:T.text,fontSize:13,fontWeight:600}}>Zion Portal <span style={{color:T.gold}}>v{APP_VERSION}</span></div>
+            <div style={{color:T.text,fontSize:13,fontWeight:600}}>ImigraMe <span style={{color:T.gold}}>v{APP_VERSION}</span></div>
             <div style={{color:T.faint,fontSize:11,marginTop:1}}>Última atualização: {CHANGELOG[0].date}</div>
           </div>
         </div>
@@ -3686,13 +3545,13 @@ function PrivacyPolicy() {
         <a href="/" style={s.back}>← Voltar ao portal</a>
         <div style={s.logo}>
           <div style={s.circle}>Z</div>
-          <div><div style={{color:"#e8c87a",fontWeight:700,fontSize:16}}>Zion Solutions</div><div style={{color:"#94a3b8",fontSize:12}}>Immigration Services</div></div>
+          <div><div style={{color:"#e8c87a",fontWeight:700,fontSize:16}}>ImigraMe</div><div style={{color:"#94a3b8",fontSize:12}}>Immigration Services</div></div>
         </div>
         <h1 style={s.h1}>Política de Privacidade</h1>
         <div style={s.date}>Última atualização: abril de 2026</div>
 
         <h2 style={s.h2}>1. Quem somos</h2>
-        <p style={s.p}>A Zion Solutions é uma empresa de consultoria em imigração que oferece serviços de assessoria para processos de Green Card e vistos nos Estados Unidos. Nosso portal do cliente é operado em <strong style={{color:"#e2e8f0"}}>zionsolution.netlify.app</strong>.</p>
+        <p style={s.p}>A ImigraMe é uma empresa de consultoria em imigração que oferece serviços de assessoria para processos de Green Card e vistos nos Estados Unidos. Nosso portal do cliente é operado em <strong style={{color:"#e2e8f0"}}>imigrame.netlify.app</strong>.</p>
 
         <h2 style={s.h2}>2. Quais dados coletamos</h2>
         <p style={s.p}>Coletamos apenas os dados necessários para a prestação dos serviços de imigração:</p>
@@ -3727,8 +3586,8 @@ function PrivacyPolicy() {
         <h2 style={s.h2}>9. Contato</h2>
         <div style={{padding:"20px 24px",background:"rgba(232,200,122,0.08)",border:"1px solid rgba(232,200,122,0.2)",borderRadius:14}}>
           <p style={{...s.p,marginBottom:4}}>Para dúvidas sobre privacidade ou seus dados:</p>
-          <div style={{color:"#e2e8f0",fontSize:15,fontWeight:600}}>admin@zionsolutions.com</div>
-          <div style={{color:"#94a3b8",fontSize:13,marginTop:4}}>Zion Solutions · zionsolution.netlify.app</div>
+          <div style={{color:"#e2e8f0",fontSize:15,fontWeight:600}}>admin@imigrame.com</div>
+          <div style={{color:"#94a3b8",fontSize:13,marginTop:4}}>ImigraMe · imigrame.netlify.app</div>
         </div>
       </div>
     </div>
@@ -3770,7 +3629,7 @@ function PublicJobs() {
       <div style={{borderBottom:`1px solid ${T.border}`,padding:"32px 24px",textAlign:"center",background:"rgba(0,0,0,0.2)"}}>
         <div style={{width:52,height:52,borderRadius:"50%",background:`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:24,fontWeight:"bold",color:"#0A0F1E"}}>Z</div>
         <h1 style={{color:T.gold,fontSize:28,fontWeight:700,margin:"0 0 8px"}}>Vagas em Aberto</h1>
-        <p style={{color:T.dim,fontSize:15,margin:0}}>Zion Solutions · Oportunidades para a comunidade brasileira nos EUA</p>
+        <p style={{color:T.dim,fontSize:15,margin:0}}>ImigraMe · Oportunidades para a comunidade brasileira nos EUA</p>
       </div>
 
       <div style={{maxWidth:800,margin:"0 auto",padding:"24px 16px 60px"}}>
@@ -3786,7 +3645,7 @@ function PublicJobs() {
         )}
 
         {loading&&<div style={{textAlign:"center",color:T.faint,padding:40}}>Carregando vagas…</div>}
-        {!loading&&visible.length===0&&<div style={{textAlign:"center",padding:60}}><div style={{fontSize:40,marginBottom:14}}>💼</div><div style={{color:T.faint,fontSize:16}}>Nenhuma vaga disponível no momento.</div><div style={{color:T.faint,fontSize:13,marginTop:8}}>Volte em breve ou entre em contato com a Zion Solutions.</div></div>}
+        {!loading&&visible.length===0&&<div style={{textAlign:"center",padding:60}}><div style={{fontSize:40,marginBottom:14}}>💼</div><div style={{color:T.faint,fontSize:16}}>Nenhuma vaga disponível no momento.</div><div style={{color:T.faint,fontSize:13,marginTop:8}}>Volte em breve ou entre em contato com a ImigraMe.</div></div>}
 
         <div style={{display:"flex",flexDirection:"column",gap:14}}>
           {visible.map(job=>(
@@ -3813,7 +3672,7 @@ function PublicJobs() {
         </div>
 
         <div style={{marginTop:40,textAlign:"center",color:T.faint,fontSize:12,lineHeight:1.8}}>
-          Zion Solutions · abraçando histórias, construindo futuros<br/>
+          ImigraMe · abraçando histórias, construindo futuros<br/>
           <a href="/" style={{color:T.gold,textDecoration:"none"}}>← Acessar Portal do Cliente</a>
         </div>
       </div>
@@ -3826,7 +3685,7 @@ function PublicJobs() {
               ? <div style={{textAlign:"center",padding:30}}>
                   <div style={{fontSize:48,marginBottom:16}}>✅</div>
                   <div style={{color:T.green,fontSize:20,fontWeight:700,marginBottom:8}}>Candidatura enviada!</div>
-                  <div style={{color:T.dim,fontSize:14}}>A Zion Solutions entrará em contato em breve.</div>
+                  <div style={{color:T.dim,fontSize:14}}>A ImigraMe entrará em contato em breve.</div>
                 </div>
               : <>
                   <h3 style={{color:T.gold,margin:"0 0 4px",fontSize:18}}>Candidatura</h3>
@@ -3929,7 +3788,7 @@ function DevPanel({payments,clients,messages,mobile}) {
           <span style={{fontSize:28}}>⚡</span>
           <div>
             <div style={{color:"#A78BFA",fontWeight:700,fontSize:18}}>Developer Panel</div>
-            <div style={{color:T.faint,fontSize:12}}>Acesso master — Zion Solutions Portal</div>
+            <div style={{color:T.faint,fontSize:12}}>Acesso master — ImigraMe Portal</div>
           </div>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
@@ -4060,7 +3919,7 @@ function DevPanel({payments,clients,messages,mobile}) {
               <div><span style={{color:"#A78BFA"}}>authDomain:</span> zion-d233f.firebaseapp.com</div>
               <div><span style={{color:"#A78BFA"}}>region:</span> nam5 (us-central)</div>
               <div><span style={{color:"#A78BFA"}}>emailjs:</span> service_uy9jrpi / template_8e8lszi</div>
-              <div><span style={{color:"#A78BFA"}}>deploy:</span> zionsolution.netlify.app</div>
+              <div><span style={{color:"#A78BFA"}}>deploy:</span> imigrame.netlify.app</div>
             </div>
           </Card>
 
@@ -4092,6 +3951,229 @@ function DevPanel({payments,clients,messages,mobile}) {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // APP ROOT — Firebase
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function App() {
+  // ── Páginas públicas ─────────────────────────────
+  const params = typeof window!=="undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  if (params.get("public")==="jobs")    return <PublicJobs/>;
+  if (params.get("public")==="privacy") return <PrivacyPolicy/>;
+
+  const mobile = useIsMobile();
+  const [user,setUser]             = useState(null);
+  const [authLoading,setAuthLoading] = useState(true);
+  const [active,setActive]         = useState("dashboard");
+  const [messages,setMessages]     = useState([]);
+  const [payments,setPayments]     = useState([]);
+  const [caseStatus,setCaseStatus] = useState([]);
+  const [bulletin,setBulletin]     = useState(DEFAULT_BULLETIN);
+  const [clients,setClients]       = useState([]);
+
+  // ── Verificar sessão ao montar ───────────────────
+  useEffect(()=>{
+    // Timeout de segurança — nunca fica travado mais de 8 segundos
+    const timeout = setTimeout(()=>setAuthLoading(false), 8000);
+    initFirebase().then(()=>{
+      _auth.onAuthStateChanged(_auth.inst, async fbUser => {
+        clearTimeout(timeout);
+        if (fbUser) {
+          try {
+            const doc = await dbGet("users", fbUser.uid);
+            if (doc) setUser({ uid: fbUser.uid, ...doc });
+          } catch(e) {
+            console.error("Erro ao carregar perfil:", e);
+          }
+        }
+        setAuthLoading(false);
+      });
+    }).catch(()=>setAuthLoading(false));
+  },[]);
+
+  // ── Carregar dados após login ────────────────────
+  useEffect(()=>{
+    if (!user || !_db) return;
+    const isAdmin = user.role==="admin";
+    const isDev   = user.role==="developer";
+    const unsubs = [];
+
+    if (isAdmin || isDev) {
+      // Admin/Developer: escuta todos os dados em tempo real
+      unsubs.push(dbListen("messages",  setMessages));
+      unsubs.push(dbListen("payments",  setPayments));
+      // Use real-time listener for clients to get driveFolderId updates
+      unsubs.push(dbListen("users", setClients, _db.where("role","==","client")));
+    } else {
+      // Cliente: escuta apenas seus próprios dados
+      const cid = user.clientId || user.uid;
+      unsubs.push(dbListen("messages", setMessages, _db.where("clientId","==",cid)));
+      unsubs.push(dbListen("payments", setPayments, _db.where("clientId","==",cid)));
+      dbGet("caseStatus", cid).then(d => setCaseStatus(d?.stages || DEFAULT_CASE));
+    }
+
+    // Bulletin (compartilhado)
+    dbGet("bulletin","current").then(d => { if(d) setBulletin(d); });
+
+    return () => unsubs.forEach(u=>u());
+  },[user]);
+
+  const logout = async () => {
+    await writeLog("logout", {email:user.email, role:user.role});
+    await _auth.signOut(_auth.inst);
+    setUser(null); setMessages([]); setPayments([]); setCaseStatus([]); setClients([]);
+    setActive("dashboard");
+  };
+
+  // ── Callbacks que gravam no Firestore ────────────
+  const handleSetMessages = (fn) => {
+    // Apenas atualiza estado local (real-time listener mantém sync)
+    setMessages(fn);
+  };
+
+  const handleAddMessage = async (msgData) => {
+    const id = await dbAdd("messages", msgData);
+    await writeLog("message_sent", {subject:msgData.subject, clientId:msgData.clientId, source:msgData.source});
+    if (msgData.source === "client") {
+      // Cliente enviou → notificar admins
+      const senderName = msgData.from || "Cliente";
+      for (const admin of ADMIN_NOTIFY_EMAILS) {
+        await sendEmail({
+          to_email:   admin.email,
+          to_name:    admin.name,
+          subject:    `📩 Nova mensagem de ${senderName} — ImigraMe`,
+          event_type: "new_message_admin",
+          message:    `${senderName} enviou uma nova mensagem no portal:\n\n` +
+                      `📌 Assunto: ${msgData.subject}\n\n` +
+                      `"${msgData.body}"\n\n` +
+                      `Acesse o portal para responder.`,
+        });
+      }
+    } else {
+      // ImigraMe/Sponsor enviou → notificar cliente
+      const cl = clients.find(c=>(c.clientId||c.uid)===msgData.clientId);
+      if (cl?.email) {
+        await sendEmail({
+          to_email:   cl.email,
+          to_name:    cl.name?.split(" ")[0] || "Cliente",
+          subject:    `✉ Nova mensagem: ${msgData.subject} — ImigraMe`,
+          event_type: "new_message",
+          message:    `Você recebeu uma nova mensagem da ImigraMe:\n\n"${msgData.body}"\n\nAcesse o portal para responder.`,
+        });
+      }
+    }
+    return id;
+  };
+
+  const handleAddPayment = async (payData) => {
+    const id = await dbAdd("payments", payData);
+    return id;
+  };
+
+  const handleUpdatePayment = async (id, status) => {
+    await dbUpdate("payments", id, { status });
+    await writeLog(`payment_${status}`, {paymentId:id, status});
+    if (status==="confirmed" || status==="rejected") {
+      const pay = payments.find(p=>p.id===id);
+      const cl  = clients.find(c=>(c.clientId||c.uid)===pay?.clientId);
+      if (cl?.email) {
+        const isConfirmed = status==="confirmed";
+        await sendEmail({
+          to_email:   cl.email,
+          to_name:    cl.name?.split(" ")[0] || "Cliente",
+          subject:    isConfirmed ? "✅ Pagamento confirmado — ImigraMe" : "❌ Comprovante rejeitado — ImigraMe",
+          event_type: isConfirmed ? "payment_confirmed" : "payment_rejected",
+          message:    isConfirmed
+            ? `Seu pagamento de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi confirmado pela ImigraMe. Acesse o portal para ver seu progresso atualizado.`
+            : `Seu comprovante de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi rejeitado. Por favor, acesse o portal e envie novamente com o comprovante correto.`,
+        });
+      }
+    }
+  };
+
+  const handleDeletePayment = async (id) => {
+    // Deleta o documento do Firestore
+    try {
+      const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      await deleteDoc(doc(_db.inst, "payments", id));
+    } catch(e) {
+      // Fallback: marca como deletado se não conseguir deletar
+      await dbUpdate("payments", id, { status: "deleted", deletedAt: new Date().toISOString() });
+    }
+  };
+
+  const handleUpdateCaseStatus = async (stages, clientInfo) => {
+    const cid = clientInfo?.clientId || user.clientId || user.uid;
+    await dbUpdate("caseStatus", cid, { stages });
+    setCaseStatus(stages);
+    // Notificar cliente quando status do processo muda
+    if (clientInfo?.email) {
+      const updatedStage = stages.find(s=>s.status!=="pending"&&s.status!=="approved");
+      if (updatedStage) {
+        await sendEmail({
+          to_email:   clientInfo.email,
+          to_name:    clientInfo.name?.split(" ")[0] || "Cliente",
+          subject:    "📋 Atualização no seu processo — ImigraMe",
+          event_type: "case_update",
+          message:    `Há uma atualização no seu processo de imigração. A etapa "${updatedStage.stage}" está agora com status: ${updatedStage.status}. ${updatedStage.note||""} Acesse o portal para mais detalhes.`,
+        });
+      }
+    }
+  };
+
+  const handleUpdateBulletin = async (data) => {
+    const existing = await dbGet("bulletin","current");
+    if (existing) await dbUpdate("bulletin","current", data);
+    else await dbAdd("bulletin", { ...data });
+    setBulletin(data);
+  };
+
+  const handleAddClient = async (clientData) => {
+    const id = await dbAdd("clients", clientData);
+    setClients(p=>[...p, { id, ...clientData }]);
+  };
+
+  // ── Loading inicial ──────────────────────────────
+  if (authLoading) return (
+    <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
+      <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid rgba(200,169,110,0.2)`,borderTopColor:T.gold,animation:"spin .8s linear infinite"}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{color:T.faint,fontSize:14}}>Conectando ao Firebase…</div>
+    </div>
+  );
+
+  if (!user) return <Login onLogin={u=>{setUser(u);setActive("dashboard");writeLog("login",{email:u.email,role:u.role});}}/>;
+
+  const isAdmin = user.role==="admin";
+  const isDev   = user.role==="developer";
+  const unread  = messages.filter(m=>m.clientId===(user.clientId||"")&&m.source!=="client"&&!m.read).length;
+
+  const pageTitle = {
+    dashboard:(isAdmin||isDev)?"Dashboard":`Olá, ${user.name?.split(" ")[0]} 👋`,
+    profile:isAdmin||isDev?"Perfil & Documentos":"Meu Perfil",
+    messages:"Mensagens", payments:(isAdmin||isDev)?"Pagamentos":"Financeiro",
+    cases:(isAdmin||isDev)?"Processos":"Meu Processo", bulletin:"Visa Bulletin",
+    clients:"Clientes", users:"Usuários", jobs:"Vagas",
+    reports:"Relatórios", devpanel:"⚡ Dev Panel", more:"Menu",
+  }[active]||"";
+
+  // Props compartilhadas entre views
+  const sharedProps = {
+    user, mobile, setActive,
+    messages,
+    setMessages: handleSetMessages,
+    addMessage:  handleAddMessage,
+    payments,
+    addPayment:     handleAddPayment,
+    updatePayment:  handleUpdatePayment,
+    deletePayment:  handleDeletePayment,
+    caseStatus,
+    updateCaseStatus: handleUpdateCaseStatus,
+    bulletin,
+    updateBulletin: handleUpdateBulletin,
+    clients,
+    addClient: handleAddClient,
+    setClients,
+  };
+
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // CLIENT PROFILE
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -4479,229 +4561,6 @@ function ClientProfile({user, clients, setClients, mobile}) {
   );
 }
 
-function App() {
-  // ── Páginas públicas ─────────────────────────────
-  const params = typeof window!=="undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
-  if (params.get("public")==="jobs")    return <PublicJobs/>;
-  if (params.get("public")==="privacy") return <PrivacyPolicy/>;
-
-  const mobile = useIsMobile();
-  const [user,setUser]             = useState(null);
-  const [authLoading,setAuthLoading] = useState(true);
-  const [active,setActive]         = useState("dashboard");
-  const [messages,setMessages]     = useState([]);
-  const [payments,setPayments]     = useState([]);
-  const [caseStatus,setCaseStatus] = useState([]);
-  const [bulletin,setBulletin]     = useState(DEFAULT_BULLETIN);
-  const [clients,setClients]       = useState([]);
-
-  // ── Verificar sessão ao montar ───────────────────
-  useEffect(()=>{
-    // Timeout de segurança — nunca fica travado mais de 8 segundos
-    const timeout = setTimeout(()=>setAuthLoading(false), 8000);
-    initFirebase().then(()=>{
-      _auth.onAuthStateChanged(_auth.inst, async fbUser => {
-        clearTimeout(timeout);
-        if (fbUser) {
-          try {
-            const doc = await dbGet("users", fbUser.uid);
-            if (doc) setUser({ uid: fbUser.uid, ...doc });
-          } catch(e) {
-            console.error("Erro ao carregar perfil:", e);
-          }
-        }
-        setAuthLoading(false);
-      });
-    }).catch(()=>setAuthLoading(false));
-  },[]);
-
-  // ── Carregar dados após login ────────────────────
-  useEffect(()=>{
-    if (!user || !_db) return;
-    const isAdmin = user.role==="admin";
-    const isDev   = user.role==="developer";
-    const unsubs = [];
-
-    if (isAdmin || isDev) {
-      // Admin/Developer: escuta todos os dados em tempo real
-      unsubs.push(dbListen("messages",  setMessages));
-      unsubs.push(dbListen("payments",  setPayments));
-      // Use real-time listener for clients to get driveFolderId updates
-      unsubs.push(dbListen("users", setClients, _db.where("role","==","client")));
-    } else {
-      // Cliente: escuta apenas seus próprios dados
-      const cid = user.clientId || user.uid;
-      unsubs.push(dbListen("messages", setMessages, _db.where("clientId","==",cid)));
-      unsubs.push(dbListen("payments", setPayments, _db.where("clientId","==",cid)));
-      dbGet("caseStatus", cid).then(d => setCaseStatus(d?.stages || DEFAULT_CASE));
-    }
-
-    // Bulletin (compartilhado)
-    dbGet("bulletin","current").then(d => { if(d) setBulletin(d); });
-
-    return () => unsubs.forEach(u=>u());
-  },[user]);
-
-  const logout = async () => {
-    await writeLog("logout", {email:user.email, role:user.role});
-    await _auth.signOut(_auth.inst);
-    setUser(null); setMessages([]); setPayments([]); setCaseStatus([]); setClients([]);
-    setActive("dashboard");
-  };
-
-  // ── Callbacks que gravam no Firestore ────────────
-  const handleSetMessages = (fn) => {
-    // Apenas atualiza estado local (real-time listener mantém sync)
-    setMessages(fn);
-  };
-
-  const handleAddMessage = async (msgData) => {
-    const id = await dbAdd("messages", msgData);
-    await writeLog("message_sent", {subject:msgData.subject, clientId:msgData.clientId, source:msgData.source});
-    if (msgData.source === "client") {
-      // Cliente enviou → notificar admins
-      const senderName = msgData.from || "Cliente";
-      for (const admin of ADMIN_NOTIFY_EMAILS) {
-        await sendEmail({
-          to_email:   admin.email,
-          to_name:    admin.name,
-          subject:    `📩 Nova mensagem de ${senderName} — Zion Portal`,
-          event_type: "new_message_admin",
-          message:    `${senderName} enviou uma nova mensagem no portal:\n\n` +
-                      `📌 Assunto: ${msgData.subject}\n\n` +
-                      `"${msgData.body}"\n\n` +
-                      `Acesse o portal para responder.`,
-        });
-      }
-    } else {
-      // Zion/Sponsor enviou → notificar cliente
-      const cl = clients.find(c=>(c.clientId||c.uid)===msgData.clientId);
-      if (cl?.email) {
-        await sendEmail({
-          to_email:   cl.email,
-          to_name:    cl.name?.split(" ")[0] || "Cliente",
-          subject:    `✉ Nova mensagem: ${msgData.subject} — Zion Solutions`,
-          event_type: "new_message",
-          message:    `Você recebeu uma nova mensagem da Zion Solutions:\n\n"${msgData.body}"\n\nAcesse o portal para responder.`,
-        });
-      }
-    }
-    return id;
-  };
-
-  const handleAddPayment = async (payData) => {
-    const id = await dbAdd("payments", payData);
-    return id;
-  };
-
-  const handleUpdatePayment = async (id, status) => {
-    await dbUpdate("payments", id, { status });
-    await writeLog(`payment_${status}`, {paymentId:id, status});
-    if (status==="confirmed" || status==="rejected") {
-      const pay = payments.find(p=>p.id===id);
-      const cl  = clients.find(c=>(c.clientId||c.uid)===pay?.clientId);
-      if (cl?.email) {
-        const isConfirmed = status==="confirmed";
-        await sendEmail({
-          to_email:   cl.email,
-          to_name:    cl.name?.split(" ")[0] || "Cliente",
-          subject:    isConfirmed ? "✅ Pagamento confirmado — Zion Solutions" : "❌ Comprovante rejeitado — Zion Solutions",
-          event_type: isConfirmed ? "payment_confirmed" : "payment_rejected",
-          message:    isConfirmed
-            ? `Seu pagamento de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi confirmado pela Zion Solutions. Acesse o portal para ver seu progresso atualizado.`
-            : `Seu comprovante de ${fmtUSD(pay?.amount||0)} (${pay?.description}) foi rejeitado. Por favor, acesse o portal e envie novamente com o comprovante correto.`,
-        });
-      }
-    }
-  };
-
-  const handleDeletePayment = async (id) => {
-    // Deleta o documento do Firestore
-    try {
-      const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      await deleteDoc(doc(_db.inst, "payments", id));
-    } catch(e) {
-      // Fallback: marca como deletado se não conseguir deletar
-      await dbUpdate("payments", id, { status: "deleted", deletedAt: new Date().toISOString() });
-    }
-  };
-
-  const handleUpdateCaseStatus = async (stages, clientInfo) => {
-    const cid = clientInfo?.clientId || user.clientId || user.uid;
-    await dbUpdate("caseStatus", cid, { stages });
-    setCaseStatus(stages);
-    // Notificar cliente quando status do processo muda
-    if (clientInfo?.email) {
-      const updatedStage = stages.find(s=>s.status!=="pending"&&s.status!=="approved");
-      if (updatedStage) {
-        await sendEmail({
-          to_email:   clientInfo.email,
-          to_name:    clientInfo.name?.split(" ")[0] || "Cliente",
-          subject:    "📋 Atualização no seu processo — Zion Solutions",
-          event_type: "case_update",
-          message:    `Há uma atualização no seu processo de imigração. A etapa "${updatedStage.stage}" está agora com status: ${updatedStage.status}. ${updatedStage.note||""} Acesse o portal para mais detalhes.`,
-        });
-      }
-    }
-  };
-
-  const handleUpdateBulletin = async (data) => {
-    const existing = await dbGet("bulletin","current");
-    if (existing) await dbUpdate("bulletin","current", data);
-    else await dbAdd("bulletin", { ...data });
-    setBulletin(data);
-  };
-
-  const handleAddClient = async (clientData) => {
-    const id = await dbAdd("clients", clientData);
-    setClients(p=>[...p, { id, ...clientData }]);
-  };
-
-  // ── Loading inicial ──────────────────────────────
-  if (authLoading) return (
-    <div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:16}}>
-      <div style={{width:44,height:44,borderRadius:"50%",border:`3px solid rgba(200,169,110,0.2)`,borderTopColor:T.gold,animation:"spin .8s linear infinite"}}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{color:T.faint,fontSize:14}}>Conectando ao Firebase…</div>
-    </div>
-  );
-
-  if (!user) return <Login onLogin={u=>{setUser(u);setActive("dashboard");writeLog("login",{email:u.email,role:u.role});}}/>;
-
-  const isAdmin = user.role==="admin";
-  const isDev   = user.role==="developer";
-  const unread  = messages.filter(m=>m.clientId===(user.clientId||"")&&m.source!=="client"&&!m.read).length;
-
-  const pageTitle = {
-    dashboard:(isAdmin||isDev)?"Dashboard":`Olá, ${user.name?.split(" ")[0]} 👋`,
-    profile:isAdmin||isDev?"Perfil & Documentos":"Meu Perfil",
-    messages:"Mensagens", payments:(isAdmin||isDev)?"Pagamentos":"Financeiro",
-    cases:(isAdmin||isDev)?"Processos":"Meu Processo", bulletin:"Visa Bulletin",
-    clients:"Clientes", users:"Usuários", jobs:"Vagas",
-    reports:"Relatórios", devpanel:"⚡ Dev Panel", more:"Menu",
-  }[active]||"";
-
-  // Props compartilhadas entre views
-  const sharedProps = {
-    user, mobile, setActive,
-    messages,
-    setMessages: handleSetMessages,
-    addMessage:  handleAddMessage,
-    payments,
-    addPayment:     handleAddPayment,
-    updatePayment:  handleUpdatePayment,
-    deletePayment:  handleDeletePayment,
-    caseStatus,
-    updateCaseStatus: handleUpdateCaseStatus,
-    bulletin,
-    updateBulletin: handleUpdateBulletin,
-    clients,
-    addClient: handleAddClient,
-    setClients,
-  };
-
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const renderView = () => {
     switch(active){
       case "dashboard": return <Dashboard {...sharedProps}/>;
@@ -4742,7 +4601,7 @@ function App() {
       <div style={{position:"sticky",top:0,background:"rgba(8,13,26,0.95)",backdropFilter:"blur(10px)",borderBottom:`1px solid ${T.border}`,padding:"14px 16px",zIndex:50,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <div style={{width:28,height:28,borderRadius:"50%",background:`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:"bold",color:"#0A0F1E"}}>Z</div>
-          <span style={{color:T.gold,fontWeight:700,fontSize:14}}>Zion Solutions</span>
+          <span style={{color:T.gold,fontWeight:700,fontSize:14}}>ImigraMe</span>
         </div>
         <span style={{color:T.text,fontWeight:700,fontSize:16}}>{pageTitle}</span>
         <div style={{width:36}}/>
