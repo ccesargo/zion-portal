@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8"/>
-  <!-- build:20260422225436 -->
+  <!-- build:20260422230333 -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
   <meta name="theme-color" content="#080D1A"/>
   <title>ImigraMe — Portal do Cliente</title>
@@ -518,8 +518,11 @@ function Sidebar({user,active,setActive,onLogout}) {
     <div style={{width:220,minHeight:"100vh",background:"#080D1A",display:"flex",flexDirection:"column",borderRight:`1px solid ${T.border}`,flexShrink:0}}>
       <div style={{padding:"28px 20px 20px",borderBottom:`1px solid ${T.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10}}>
-          <div style={{width:36,height:36,borderRadius:"50%",background:isDev?"linear-gradient(135deg,#7C3AED,#A78BFA)":`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"bold",color:"#fff",fontSize:16}}>{isDev?"⚡":"Z"}</div>
-          <div><div style={{color:isDev?"#A78BFA":T.gold,fontWeight:700,fontSize:13}}>ImigraMe</div><div style={{color:T.faint,fontSize:11}}>{isDev?"Developer":isAdmin?"Administrador":"Cliente"}</div></div>
+          {isDev
+            ? <div style={{width:36,height:36,borderRadius:"50%",background:"linear-gradient(135deg,#7C3AED,#A78BFA)",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"bold",color:"#fff",fontSize:16}}>⚡</div>
+            : <div dangerouslySetInnerHTML={{__html:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 36" width="140" height="32">  <defs>    <linearGradient id="sc" x1="0%" y1="0%" x2="100%" y2="100%">      <stop offset="0%" style="stop-color:#1a6b3c"/>      <stop offset="100%" style="stop-color:#0d4a2a"/>    </linearGradient>    <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">      <stop offset="0%" style="stop-color:#f0c040"/>      <stop offset="100%" style="stop-color:#d4a012"/>    </linearGradient>  </defs>  <rect x="0" y="2" width="28" height="20" rx="3" fill="url(#sc)" stroke="#2d8a52" stroke-width="0.8"/>  <rect x="0" y="6" width="28" height="5" fill="#0d4a2a" opacity="0.6"/>  <circle cx="4" cy="4.5" r="1.2" fill="url(#sg)"/>  <circle cx="8" cy="4.5" r="1.2" fill="url(#sg)"/>  <circle cx="12" cy="4.5" r="1.2" fill="url(#sg)"/>  <rect x="2" y="14" width="10" height="1.5" rx="0.7" fill="#4ade80" opacity="0.8"/>  <rect x="2" y="17" width="16" height="1.5" rx="0.7" fill="#4ade80" opacity="0.5"/>  <rect x="20" y="12" width="6" height="8" rx="1" fill="#1a3a6e"/>  <rect x="20" y="12" width="6" height="3" rx="1" fill="#c0392b"/>  <circle cx="23" cy="18" r="1.5" fill="#f0c040" opacity="0.9"/>  <text x="34" y="22" font-family="Georgia,serif" font-size="18" font-weight="700" fill="#ffffff" letter-spacing="-0.3">Imigra</text>  <text x="100" y="22" font-family="Georgia,serif" font-size="18" font-weight="700" fill="#4ade80" letter-spacing="-0.3">Me</text></svg>`}}/>
+          }
+          {isDev&&<div><div style={{color:"#A78BFA",fontWeight:700,fontSize:13}}>ImigraMe</div><div style={{color:T.faint,fontSize:11}}>Developer</div></div>}
         </div>
       </div>
       <nav style={{flex:1,padding:"14px 10px"}}>
@@ -603,9 +606,7 @@ function Login({onLogin}) {
   return (
     <div style={{minHeight:"100vh",background:`linear-gradient(150deg,#060B18,#0D1829,#0A1220)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"Georgia,serif"}}>
       <div style={{marginBottom:36,textAlign:"center"}}>
-        <div style={{width:68,height:68,borderRadius:"50%",background:`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",fontSize:28,fontWeight:"bold",color:"#0A0F1E",boxShadow:`0 0 40px rgba(200,169,110,0.3)`}}>Z</div>
-        <h1 style={{color:T.gold,fontSize:26,fontWeight:700,margin:0}}>ImigraMe</h1>
-        <p style={{color:T.faint,fontSize:13,marginTop:6}}>Portal do Cliente</p>
+        <div style={{marginBottom:8}} dangerouslySetInnerHTML={{__html:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 90" width="260" height="84">  <defs>    <linearGradient id="lc" x1="0%" y1="0%" x2="100%" y2="100%">      <stop offset="0%" style="stop-color:#1a6b3c"/>      <stop offset="100%" style="stop-color:#0d4a2a"/>    </linearGradient>    <linearGradient id="lg" x1="0%" y1="0%" x2="100%" y2="100%">      <stop offset="0%" style="stop-color:#f0c040"/>      <stop offset="100%" style="stop-color:#d4a012"/>    </linearGradient>    <linearGradient id="lt" x1="0%" y1="0%" x2="100%" y2="0%">      <stop offset="0%" style="stop-color:#ffffff"/>      <stop offset="100%" style="stop-color:#e0f0e8"/>    </linearGradient>    <filter id="gs">      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.4"/>    </filter>  </defs>  <g filter="url(#gs)">    <rect x="0" y="8" width="52" height="36" rx="5" fill="url(#lc)" stroke="#2d8a52" stroke-width="1"/>    <rect x="0" y="16" width="52" height="9" fill="#0d4a2a" opacity="0.6"/>    <circle cx="7" cy="12" r="2" fill="url(#lg)"/>    <circle cx="15" cy="12" r="2" fill="url(#lg)"/>    <circle cx="23" cy="12" r="2" fill="url(#lg)"/>    <rect x="4" y="30" width="18" height="2.5" rx="1.2" fill="#4ade80" opacity="0.8"/>    <rect x="4" y="35" width="28" height="2.5" rx="1.2" fill="#4ade80" opacity="0.5"/>    <rect x="37" y="28" width="11" height="14" rx="1.5" fill="#1a3a6e"/>    <rect x="37" y="28" width="11" height="5" rx="1.5" fill="#c0392b"/>    <circle cx="42.5" cy="36" r="2.8" fill="#f0c040" opacity="0.9"/>  </g>  <g transform="translate(62,0)">    <polyline points="8,50 8,30 18,40 8,30 -2,40" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>  </g>  <text x="80" y="50" font-family="Georgia,serif" font-size="34" font-weight="700" fill="url(#lt)" letter-spacing="-0.5">Imigra</text>  <text x="196" y="50" font-family="Georgia,serif" font-size="34" font-weight="700" fill="#4ade80" letter-spacing="-0.5">Me</text>  <text x="80" y="68" font-family="Georgia,serif" font-size="10.5" fill="#4a7a5a" letter-spacing="2">YOUR IMMIGRATION JOURNEY</text>  <line x1="80" y1="74" x2="268" y2="74" stroke="#1a6b3c" stroke-width="1" opacity="0.4"/></svg>`}}/>
       </div>
       <div style={{width:"100%",maxWidth:400}}>
         {resetSent ? (
@@ -3071,7 +3072,7 @@ function VersionCard() {
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:18}}>🚀</span>
           <div style={{textAlign:"left"}}>
-            <div style={{color:T.text,fontSize:13,fontWeight:600}}>ImigraMe <span style={{color:T.gold}}>v{APP_VERSION}</span></div>
+            <div style={{color:T.text,fontSize:13,fontWeight:600}}><span style={{color:T.green}}>Imigra</span><span style={{color:"#4ade80"}}>Me</span> <span style={{color:T.gold}}>v{APP_VERSION}</span></div>
             <div style={{color:T.faint,fontSize:11,marginTop:1}}>Última atualização: {CHANGELOG[0].date}</div>
           </div>
         </div>
@@ -4600,8 +4601,7 @@ function ClientProfile({user, clients, setClients, mobile}) {
     <div style={{background:T.bg,minHeight:"100vh",fontFamily:"Georgia,'Times New Roman',serif",color:T.text,maxWidth:480,margin:"0 auto"}}>
       <div style={{position:"sticky",top:0,background:"rgba(8,13,26,0.95)",backdropFilter:"blur(10px)",borderBottom:`1px solid ${T.border}`,padding:"14px 16px",zIndex:50,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:28,height:28,borderRadius:"50%",background:`linear-gradient(135deg,${T.goldDim},${T.gold})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:"bold",color:"#0A0F1E"}}>Z</div>
-          <span style={{color:T.gold,fontWeight:700,fontSize:14}}>ImigraMe</span>
+          <div dangerouslySetInnerHTML={{__html:'<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 110 26' width='100' height='24'><defs><linearGradient id='mc2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:#1a6b3c'/><stop offset='100%' style='stop-color:#0d4a2a'/></linearGradient><linearGradient id='mg2' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:#f0c040'/><stop offset='100%' style='stop-color:#d4a012'/></linearGradient></defs><rect x='0' y='2' width='20' height='14' rx='2' fill='url(#mc2)' stroke='#2d8a52' stroke-width='0.7'/><rect x='0' y='5.5' width='20' height='4' fill='#0d4a2a' opacity='0.6'/><circle cx='3' cy='4' r='1' fill='url(#mg2)'/><circle cx='6' cy='4' r='1' fill='url(#mg2)'/><circle cx='9' cy='4' r='1' fill='url(#mg2)'/><rect x='2' y='11' width='7' height='1' rx='0.5' fill='#4ade80' opacity='0.8'/><rect x='13' y='9' width='5' height='6' rx='1' fill='#1a3a6e'/><rect x='13' y='9' width='5' height='2.5' rx='1' fill='#c0392b'/><text x='25' y='17' font-family='Georgia,serif' font-size='13' font-weight='700' fill='white'>Imigra</text><text x='75' y='17' font-family='Georgia,serif' font-size='13' font-weight='700' fill='#4ade80'>Me</text></svg>'}}/>
         </div>
         <span style={{color:T.text,fontWeight:700,fontSize:16}}>{pageTitle}</span>
         <div style={{width:36}}/>
